@@ -1,8 +1,9 @@
-import os
-from fastapi import FastAPI, HTTPException, File, UploadFile, Body
+import os, json
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
-from typing import List, Optional
+from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
@@ -11,6 +12,52 @@ default_app = initialize_app(cred, {
     'storageBucket': 'billimiut.appspot.com'
 })
 db = firestore.client()
+
+
+html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Websocket Demo</title>
+           <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    </head>
+    <body>
+    <div class="container mt-3">
+        <h1>FastAPI WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" class="form-control" id="messageText" autocomplete="off"/>
+            <button class="btn btn-outline-primary mt-2">Send</button>
+        </form>
+        <ul id='messages' class="mt-5">
+        </ul>
+        
+    </div>
+    
+        <script>
+            var client_id = "JWguSs0WqJcdFWtwzrvYVJdSN8k2"
+            document.querySelector("#ws-id").textContent = client_id;
+            var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>
+"""
+
 
 class GeoPoint(BaseModel):
     latitude: float
@@ -83,7 +130,37 @@ class Add_Post(BaseModel):
     post: Post
     location: Location
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str):
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+
+    async def disconnect(self, client_id: str):
+        websocket = self.active_connections[client_id]
+        await websocket.close()
+        del self.active_connections[client_id]
+
+    async def send_personal_message(self, message: str, receiver_id: str):
+        websocket = self.active_connections.get(receiver_id)
+        if websocket:
+            await websocket.send_text(message)
+
+manager = ConnectionManager()
+
+class Message(BaseModel):
+    sender_id: str
+    receiver_id: str
+    content: str
+
 app = FastAPI()
+
+# websocket test를 위한 code
+@app.get("/")
+async def get():
+    return HTMLResponse(html)
 
 #ok
 @app.post("/login")
@@ -215,3 +292,25 @@ async def upload_image(images: List[UploadFile] = File(...)):
         urls.append(url)
 
     return {"urls": urls}
+
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    print("hi")
+    await manager.connect(websocket, client_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            data_json = json.loads(data)
+            message = Message(**data_json)
+            chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
+            db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            await manager.send_personal_message(f"Message text was: {message.content}", message.receiver_id)
+    except WebSocketDisconnect:
+        manager.disconnect(client_id)
+
+
+@app.get("/get_messages/{chat_id}")
+async def get_messages(chat_id: str):
+    messages = db.collection('chats').document(chat_id).collection('messages').stream()
+    return {"messages": [doc.to_dict() for doc in messages]}
