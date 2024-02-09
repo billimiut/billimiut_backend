@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, File, UploadFile, Body
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -204,16 +204,14 @@ async def upload_image(images: List[UploadFile] = File(...)):
     urls = []
 
     for image in images:
-        print(image.content_type)
         if not (image.content_type == 'image/jpeg' or image.content_type == 'image/jpg' or image.content_type == 'image/png'):
             raise HTTPException(status_code=400, detail="Invalid file type.")
         
         fileName = f'{datetime.now().timestamp()}.jpg'
         blob = storage.bucket().blob(f'post_images/{fileName}')
-
         blob.upload_from_file(image.file, content_type=image.content_type)
 
-        downloadUrl = blob.public_url
-        urls.append(downloadUrl)
+        url = blob.generate_signed_url(timedelta(days=365))
+        urls.append(url)
 
     return {"urls": urls}
