@@ -153,6 +153,16 @@ async def my_info(user: Login_Token = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="User not found in Firestore")
 
+
+@app.get("/get_post")
+async def get_post(post_id: str):
+    doc_ref = db.collection('post').document(post_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return {"error": "Document does not exist"}
+
 #ok
 @app.get("/get_posts")
 async def read_posts():
