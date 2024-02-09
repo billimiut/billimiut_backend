@@ -8,7 +8,7 @@ from datetime import datetime
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
 default_app = initialize_app(cred, {
-    'storageBucket': 'gs://billimiut.appspot.com'
+    'storageBucket': 'billimiut.appspot.com'
 })
 db = firestore.client()
 
@@ -198,3 +198,22 @@ async def add_post(data: Add_Post):
     except Exception as e:
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
     return {"message": "Post successfully added"}
+
+@app.post("/upload_image")
+async def upload_image(images: List[UploadFile] = File(...)):
+    urls = []
+
+    for image in images:
+        print(image.content_type)
+        if not (image.content_type == 'image/jpeg' or image.content_type == 'image/jpg' or image.content_type == 'image/png'):
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+        
+        fileName = f'{datetime.now().timestamp()}.jpg'
+        blob = storage.bucket().blob(f'post_images/{fileName}')
+
+        blob.upload_from_file(image.file, content_type=image.content_type)
+
+        downloadUrl = blob.public_url
+        urls.append(downloadUrl)
+
+    return {"urls": urls}
