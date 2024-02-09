@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from firebase_admin import credentials, firestore, initialize_app, auth
-from typing import List, Optional
+from typing import List, Dict, Optional
 from datetime import datetime
 
 cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
@@ -41,7 +41,7 @@ class SignUp_User(BaseModel):
     posts: List[str] = []
     borrow_list: List[str] = []
     lend_list: List[str] = []
-    temperature: int = 36.5
+    temperature: float = 36.5
     total_money: int = 0
     borrow_count: int = 0
     image_url: str = ""
@@ -63,6 +63,28 @@ class Location(BaseModel):
     location_id: str
 
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str):
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+
+    async def disconnect(self, client_id: str):
+        del self.active_connections[client_id]
+
+    async def send_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+
+class Message(BaseModel):
+    sender_id: str
+    receiver_id: str
+    content: str
+
+
+manager = ConnectionManager()
 app = FastAPI()
 
 
@@ -161,3 +183,21 @@ async def add_item(user_id: str, item: Item):
     return {"message": "Item successfully added"}
 
 
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await manager.connect(websocket, client_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = Message(sender_id=client_id, receiver_id='all', content=data)
+            chat_id = ''.join(sorted([client_id, 'all'])) 
+            db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            await manager.send_message(f"Message text was: {data}", websocket)
+    except WebSocketDisconnect:
+        manager.disconnect(client_id)
+
+
+@app.get("/get_messages/{chat_id}")
+async def get_messages(chat_id: str):
+    messages = db.collection('chats').document(chat_id).collection('messages').stream()
+    return {"messages": [doc.to_dict() for doc in messages]}
