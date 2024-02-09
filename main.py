@@ -166,6 +166,16 @@ async def read_posts():
     return result
 
 
+@app.get("/get_location")
+async def get_location(location_id: str):
+    doc_ref = db.collection('location').document(location_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return {"error": "Document does not exist"}
+
+
 @app.post("/add_post")
 async def add_post(data: Add_Post):
     user_id = data.user_id
@@ -199,6 +209,7 @@ async def add_post(data: Add_Post):
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
     return {"message": "Post successfully added"}
 
+
 @app.post("/upload_image")
 async def upload_image(images: List[UploadFile] = File(...)):
     urls = []
@@ -215,3 +226,5 @@ async def upload_image(images: List[UploadFile] = File(...)):
         urls.append(url)
 
     return {"urls": urls}
+
+
