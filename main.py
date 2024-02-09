@@ -1,11 +1,15 @@
-from fastapi import FastAPI, HTTPException, Body
+import os
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body
 from pydantic import BaseModel
-from firebase_admin import credentials, firestore, initialize_app, auth
+from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
-cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
-default_app = initialize_app(cred)
+#cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
+cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
+default_app = initialize_app(cred, {
+    'storageBucket': 'billimiut.appspot.com'
+})
 db = firestore.client()
 
 class GeoPoint(BaseModel):
@@ -195,4 +199,19 @@ async def add_post(data: Add_Post):
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
     return {"message": "Post successfully added"}
 
+@app.post("/upload_image")
+async def upload_image(images: List[UploadFile] = File(...)):
+    urls = []
 
+    for image in images:
+        if not (image.content_type == 'image/jpeg' or image.content_type == 'image/jpg' or image.content_type == 'image/png'):
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+        
+        fileName = f'{datetime.now().timestamp()}.jpg'
+        blob = storage.bucket().blob(f'post_images/{fileName}')
+        blob.upload_from_file(image.file, content_type=image.content_type)
+
+        url = blob.generate_signed_url(timedelta(days=365))
+        urls.append(url)
+
+    return {"urls": urls}
