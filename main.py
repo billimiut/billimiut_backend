@@ -1,17 +1,28 @@
-from fastapi import FastAPI, HTTPException, Body
+import os
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body
 from pydantic import BaseModel
-from firebase_admin import credentials, firestore, initialize_app, auth
+from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Optional
 from datetime import datetime
 
-cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
-default_app = initialize_app(cred)
+#cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
+cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
+default_app = initialize_app(cred, {
+    'storageBucket': 'gs://billimiut.appspot.com'
+})
 db = firestore.client()
 
-class Item(BaseModel):
-    post_id: str
+class GeoPoint(BaseModel):
+    latitude: float
+    longitude: float
+
+# category_id <- 일단 category: str으로 대체
+class Post(BaseModel):
+    post_id: str = ""
+    nickname: str
     title: str
     item: str
+    category: str # 변경
     image_url: List[str]
     money: int
     borrow: bool
@@ -19,21 +30,20 @@ class Item(BaseModel):
     emergency: bool
     start_date: datetime
     end_date: datetime
-    location_id: int
-    femail: bool
+    location_id: str = ""
+    female: bool
     status: str = "게시"
-    keyword_id: str
     borrower_user_id: Optional[str] = None
     lender_user_id: Optional[str] = None
 
-class User(BaseModel):
+class Login(BaseModel):
     id: str
     pw: str
 
 class Login_Token(BaseModel):
     login_token: str
 
-class SignUp_User(BaseModel):
+class User(BaseModel):
     id: str
     pw: str
     nickname: str
@@ -41,7 +51,7 @@ class SignUp_User(BaseModel):
     posts: List[str] = []
     borrow_list: List[str] = []
     lend_list: List[str] = []
-    temperature: int = 36.5
+    temperature: float = 36.5
     total_money: int = 0
     borrow_count: int = 0
     image_url: str = ""
@@ -50,24 +60,34 @@ class SignUp_User(BaseModel):
     locations: List[str] = []
 
 class Nickname(BaseModel):
-    uid: str
+    user_id: str
     nickname: str
 
 class ImageUrl(BaseModel):
-    uid: str
+    user_id: str
     image_url: str
 
+class User_Location(BaseModel):
+    user_id: str
+    location: str
 
 class Location(BaseModel):
-    uid: str
-    location_id: str
+    location_id: str = ""
+    map: GeoPoint
+    address: str
+    detail_address: str
+    dong: str
 
+class Add_Post(BaseModel):
+    user_id: str
+    post: Post
+    location: Location
 
 app = FastAPI()
 
-
+#ok
 @app.post("/login")
-async def login(user: User = Body(...)):
+async def login(user: Login = Body(...)):
     print("login")
     try:
         user_record = auth.get_user_by_email(user.id)
@@ -77,9 +97,9 @@ async def login(user: User = Body(...)):
         return {"message": "0"}
     return {"message": "1", "login_token": user_record.uid}
 
-
+#ok
 @app.post("/signup")
-async def signup(user: SignUp_User = Body(...)):
+async def signup(user: User = Body(...)):
     try:
         user_record = auth.create_user(
             email=user.id,
@@ -89,41 +109,41 @@ async def signup(user: SignUp_User = Body(...)):
         user_data = user.dict()
         user_data['user_id'] = user_record.uid
         db.collection('user').document(user_record.uid).set(user_data)
-    except auth.AuthError:
+    except exceptions.FirebaseError:
         raise HTTPException(status_code=400, detail="User creation failed")
     return {"message": "User successfully created"}
 
-
+#ok
 @app.post("/set_nickname")
 async def set_nickname(nickname_data: Nickname = Body(...)):
-    user_ref = db.collection('user').document(nickname_data.uid)
+    user_ref = db.collection('user').document(nickname_data.user_id)
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
     user_ref.update({"nickname": nickname_data.nickname})
     return {"message": "Nickname successfully updated"}
 
-
+#ok
 @app.post("/set_image_url")
 async def set_image_url(image_url_data: ImageUrl = Body(...)):
-    user_ref = db.collection('user').document(image_url_data.uid)
+    user_ref = db.collection('user').document(image_url_data.user_id)
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
     user_ref.update({"image_url": image_url_data.image_url})
     return {"message": "Image URL successfully updated"}
 
-
-@app.post("/set_locations")
-async def set_locations(location_data: Location = Body(...)):
-    user_ref = db.collection('user').document(location_data.uid)
+#ok
+@app.post("/set_location")
+async def set_locations(location_data: User_Location = Body(...)):
+    user_ref = db.collection('user').document(location_data.user_id)
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    user_ref.update({"locations": firestore.ArrayUnion([location_data.location_id])})
-    return {"message": "Location ID successfully added"}
+    user_ref.update({"locations": firestore.ArrayUnion([location_data.location])})
+    return {"message": "Location successfully added"}
 
-
+#ok
 @app.post("/my_info")
 async def my_info(user: Login_Token = Body(...)):
     doc_ref = db.collection('user').document(user.login_token)
@@ -133,31 +153,48 @@ async def my_info(user: Login_Token = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="User not found in Firestore")
 
-
+#ok
 @app.get("/get_posts")
-async def read_items():
+async def read_posts():
     print("get_posts")
     docs = db.collection('post').stream()
     result = []
     for doc in docs:
         data = doc.to_dict()
-        selected_fields = {field: data.get(field, None) for field in ['post_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'keyword_id', 'borrower_user_id', 'lender_user_id']}
+        selected_fields = {field: data.get(field, None) for field in ['post_id', 'nickname', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id']}
         result.append(selected_fields)
     return result
 
 
 @app.post("/add_post")
-async def add_item(user_id: str, item: Item):
-    if item.borrow:
-        item.borrower_user_id = user_id
+async def add_post(data: Add_Post):
+    user_id = data.user_id
+    post = data.post
+    location = data.location
+    geopoint = firestore.GeoPoint(data.location.map.latitude, data.location.map.longitude)
+
+    # 빌린 사람/빌려준 사람 초기화
+    if post.borrow:
+        post.borrower_user_id = user_id
+        post.lender_user_id = ""
     else:
-        item.lender_user_id = user_id
+        post.lender_user_id = user_id
+        post.borrower_user_id = ""
 
-    doc_ref = db.collection('post').document()
+    doc_ref1 = db.collection('post').document()
+    doc_ref2 = db.collection('location').document()
+    
     try:
-        doc_ref.set(item.dict())
+        post_dict = post.dict()
+        post_dict["post_id"] = doc_ref1.id
+        post_dict["location_id"] = doc_ref2.id
+        doc_ref1.set(post_dict)
+
+        location_dict = location.dict()
+        location_dict["location_id"] = doc_ref2.id
+        location_dict["map"] = geopoint
+        doc_ref2.set(location_dict)
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail="An error occurred while adding the item.")
-    return {"message": "Item successfully added"}
-
-
+        raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
+    return {"message": "Post successfully added"}
