@@ -60,8 +60,8 @@ html = """
 
 
 class GeoPoint(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: float = 0.0
+    longitude: float = 0.0
 
 # category_id <- 일단 category: str으로 대체
 class Post(BaseModel):
@@ -120,11 +120,11 @@ class User_Location(BaseModel):
 
 class Location(BaseModel):
     location_id: str = ""
-    map: GeoPoint
-    address: str
-    detail_address: str
-    name: str
-    dong: str
+    map: GeoPoint = GeoPoint()
+    address: str = ""
+    detail_address: str = ""
+    name: str = ""
+    dong: str = ""
 
 class Add_Post(BaseModel):
     user_id: str
