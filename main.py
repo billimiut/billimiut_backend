@@ -76,6 +76,7 @@ class Location(BaseModel):
     map: GeoPoint
     address: str
     detail_address: str
+    name: str
     dong: str
 
 class Add_Post(BaseModel):
