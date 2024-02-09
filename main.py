@@ -79,28 +79,6 @@ class Add_Post(BaseModel):
     post: Post
     location: Location
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-
-    async def connect(self, websocket: WebSocket, client_id: str):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
-
-    async def disconnect(self, client_id: str):
-        del self.active_connections[client_id]
-
-    async def send_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-
-class Message(BaseModel):
-    sender_id: str
-    receiver_id: str
-    content: str
-
-
-manager = ConnectionManager()
 app = FastAPI()
 
 #ok
