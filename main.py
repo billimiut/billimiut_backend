@@ -123,6 +123,7 @@ class Location(BaseModel):
     map: GeoPoint
     address: str
     detail_address: str
+    name: str
     dong: str
 
 class Add_Post(BaseModel):
@@ -230,6 +231,16 @@ async def my_info(user: Login_Token = Body(...)):
     else:
         raise HTTPException(status_code=404, detail="User not found in Firestore")
 
+
+@app.get("/get_post")
+async def get_post(post_id: str):
+    doc_ref = db.collection('post').document(post_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return {"error": "Document does not exist"}
+
 #ok
 @app.get("/get_posts")
 async def read_posts():
@@ -241,6 +252,16 @@ async def read_posts():
         selected_fields = {field: data.get(field, None) for field in ['post_id', 'nickname', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id']}
         result.append(selected_fields)
     return result
+
+
+@app.get("/get_location")
+async def get_location(location_id: str):
+    doc_ref = db.collection('location').document(location_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return {"error": "Document does not exist"}
 
 
 @app.post("/add_post")
@@ -275,6 +296,7 @@ async def add_post(data: Add_Post):
     except Exception as e:
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
     return {"message": "Post successfully added"}
+
 
 @app.post("/upload_image")
 async def upload_image(images: List[UploadFile] = File(...)):
