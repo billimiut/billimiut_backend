@@ -318,7 +318,6 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    print("hi")
     await manager.connect(websocket, client_id)
     try:
         while True:
