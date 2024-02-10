@@ -236,10 +236,33 @@ async def my_info(user: Login_Token = Body(...)):
 
 @app.get("/get_post")
 async def get_post(post_id: str):
-    doc_ref = db.collection('post').document(post_id)
-    doc = doc_ref.get()
-    if doc.exists:
-        return doc.to_dict()
+    post_ref = db.collection('post').document(post_id) # post_id에 해당하는 post 가져옴
+    post_doc = post_ref.get()
+
+    if post_doc.exists:
+        post = post_doc.to_dict() # post 딕셔너리
+        
+        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+        nickname = user['nickname']
+        profile = user['image_url']
+        post['nickname'] = nickname
+        post['profile'] = profile
+
+        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+        address = location['address']
+        detail_address = location['detail_address']
+        name = location['name']
+        map = location['map']
+        dong = location['dong']
+        post['address'] = address
+        post['detail_address'] = detail_address
+        post['name'] = name
+        post['map'] = map
+        post['dong'] = dong
+
+        return post
     else:
         return {"error": "Document does not exist"}
 
