@@ -60,13 +60,13 @@ html = """
 
 
 class GeoPoint(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: float = 0.0
+    longitude: float = 0.0
 
 # category_id <- 일단 category: str으로 대체
 class Post(BaseModel):
     post_id: str = ""
-    nickname: str
+    writer_id: str = ""
     title: str
     item: str
     category: str # 변경
@@ -120,11 +120,11 @@ class User_Location(BaseModel):
 
 class Location(BaseModel):
     location_id: str = ""
-    map: GeoPoint
-    address: str
-    detail_address: str
-    name: str
-    dong: str
+    map: GeoPoint = GeoPoint()
+    address: str = ""
+    detail_address: str = ""
+    name: str = ""
+    dong: str = ""
 
 class Add_Post(BaseModel):
     user_id: str
@@ -249,7 +249,7 @@ async def read_posts():
     result = []
     for doc in docs:
         data = doc.to_dict()
-        selected_fields = {field: data.get(field, None) for field in ['post_id', 'nickname', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id']}
+        selected_fields = {field: data.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id']}
         result.append(selected_fields)
     return result
 
@@ -284,6 +284,7 @@ async def add_post(data: Add_Post):
     
     try:
         post_dict = post.dict()
+        post_dict["writer_id"] = user_id
         post_dict["post_id"] = doc_ref1.id
         post_dict["location_id"] = doc_ref2.id
         doc_ref1.set(post_dict)
