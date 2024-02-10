@@ -105,6 +105,7 @@ class User(BaseModel):
     keywords : List[str] = []
     lend_count: int = 0
     locations: List[str] = []
+    chat_list: List[str] = []
 
 class Nickname(BaseModel):
     user_id: str
@@ -155,6 +156,7 @@ class Message(BaseModel):
     sender_id: str
     receiver_id: str
     content: str
+    time: str = datetime.now().isoformat()
 
 app = FastAPI()
 
@@ -249,7 +251,7 @@ async def read_posts():
     result = []
     for doc in docs:
         data = doc.to_dict()
-        selected_fields = {field: data.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id']}
+        selected_fields = {field: data.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
         result.append(selected_fields)
     return result
 
@@ -324,12 +326,18 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             data = await websocket.receive_text()
             data_json = json.loads(data)
-            message = Message(**data_json)
+            message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
             db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             await manager.send_personal_message(f"Message text was: {message.content}", message.receiver_id)
+
+            # Update the chat_list field in each user's document
+            user_doc_A = db.collection('user').document(message.sender_id)
+            user_doc_A.set({"chat_list": firestore.ArrayUnion([message.receiver_id])}, merge=True)
+            user_doc_B = db.collection('user').document(message.receiver_id)
+            user_doc_B.set({"chat_list": firestore.ArrayUnion([message.sender_id])}, merge=True)
     except WebSocketDisconnect:
-        manager.disconnect(client_id)
+        await manager.disconnect(client_id)
 
 
 @app.get("/get_messages/{chat_id}")
