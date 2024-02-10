@@ -273,9 +273,32 @@ async def read_posts():
     docs = db.collection('post').stream()
     result = []
     for doc in docs:
-        data = doc.to_dict()
-        selected_fields = {field: data.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
-        result.append(selected_fields)
+        post = doc.to_dict()
+
+        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+        nickname = user['nickname']
+        profile = user['image_url']
+        post['nickname'] = nickname
+        post['profile'] = profile
+
+        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+        address = location['address']
+        detail_address = location['detail_address']
+        name = location['name']
+        map = location['map']
+        dong = location['dong']
+        post['address'] = address
+        post['detail_address'] = detail_address
+        post['name'] = name
+        post['map'] = map
+        post['dong'] = dong
+
+        print(result)
+
+        #selected_fields = {field: post.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
+        result.append(post)
     return result
 
 
