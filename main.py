@@ -155,7 +155,8 @@ manager = ConnectionManager()
 class Message(BaseModel):
     sender_id: str
     receiver_id: str
-    content: str
+    post_id: str
+    message: str
     time: str = datetime.now().isoformat()
 
 app = FastAPI()
@@ -329,13 +330,13 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
             db.collection('chats').document(chat_id).collection('messages').add(message.dict())
-            await manager.send_personal_message(f"Message text was: {message.content}", message.receiver_id)
+            await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
             # Update the chat_list field in each user's document
             user_doc_A = db.collection('user').document(message.sender_id)
-            user_doc_A.set({"chat_list": firestore.ArrayUnion([message.receiver_id])}, merge=True)
+            user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
             user_doc_B = db.collection('user').document(message.receiver_id)
-            user_doc_B.set({"chat_list": firestore.ArrayUnion([message.sender_id])}, merge=True)
+            user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
     except WebSocketDisconnect:
         await manager.disconnect(client_id)
 
