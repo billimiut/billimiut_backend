@@ -172,11 +172,77 @@ async def login(user: Login = Body(...)):
     print("login")
     try:
         user_record = auth.get_user_by_email(user.id)
+        user_id = user_record.uid
+
+        doc_ref = db.collection('user').document(user_id)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            my_info = doc.to_dict()
+            borrow_list = my_info['borrow_list']
+            lend_list = my_info['lend_list']
+
+            result_borrow_list = []
+            result_lend_list = []
+
+            # borrow_list, lend_list 실제 post 정보로 채우기
+            for post_id in borrow_list:
+                post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
+
+                # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+                user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+                nickname = user['nickname']
+                profile = user['image_url']
+                post['nickname'] = nickname
+                post['profile'] = profile
+
+                # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+                location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+                address = location['address']
+                detail_address = location['detail_address']
+                name = location['name']
+                map = location['map']
+                dong = location['dong']
+                post['address'] = address
+                post['detail_address'] = detail_address
+                post['name'] = name
+                post['map'] = map
+                post['dong'] = dong
+                result_borrow_list.append(post)
+
+            for post_id in lend_list:
+                post = db.collection('post').document(post_id).get().to_dict # post_id에 해당하는 post 가져옴
+                
+                # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+                user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+                nickname = user['nickname']
+                profile = user['image_url']
+                post['nickname'] = nickname
+                post['profile'] = profile
+
+                # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+                location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+                address = location['address']
+                detail_address = location['detail_address']
+                name = location['name']
+                map = location['map']
+                dong = location['dong']
+                post['address'] = address
+                post['detail_address'] = detail_address
+                post['name'] = name
+                post['map'] = map
+                post['dong'] = dong
+                result_lend_list.append(post)
+
+            my_info['borrow_list'] = result_borrow_list
+            my_info['lend_list'] = result_lend_list
+
+            return my_info
+        else:
+            raise HTTPException(status_code=404, detail="User not found in Firestore")
+
     except Exception:
-        return {"message": "0"}
-    if not user_record:
-        return {"message": "0"}
-    return {"message": "1", "login_token": user_record.uid}
+        return {"message": "An exception occurred."}
 
 #ok
 @app.post("/signup")
@@ -237,10 +303,33 @@ async def my_info(user: Login_Token = Body(...)):
 
 @app.get("/get_post")
 async def get_post(post_id: str):
-    doc_ref = db.collection('post').document(post_id)
-    doc = doc_ref.get()
-    if doc.exists:
-        return doc.to_dict()
+    post_ref = db.collection('post').document(post_id) # post_id에 해당하는 post 가져옴
+    post_doc = post_ref.get()
+
+    if post_doc.exists:
+        post = post_doc.to_dict() # post 딕셔너리
+        
+        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+        nickname = user['nickname']
+        profile = user['image_url']
+        post['nickname'] = nickname
+        post['profile'] = profile
+
+        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+        address = location['address']
+        detail_address = location['detail_address']
+        name = location['name']
+        map = location['map']
+        dong = location['dong']
+        post['address'] = address
+        post['detail_address'] = detail_address
+        post['name'] = name
+        post['map'] = map
+        post['dong'] = dong
+
+        return post
     else:
         return {"error": "Document does not exist"}
 
@@ -251,9 +340,32 @@ async def read_posts():
     docs = db.collection('post').stream()
     result = []
     for doc in docs:
-        data = doc.to_dict()
-        selected_fields = {field: data.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
-        result.append(selected_fields)
+        post = doc.to_dict()
+
+        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+        nickname = user['nickname']
+        profile = user['image_url']
+        post['nickname'] = nickname
+        post['profile'] = profile
+
+        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+        address = location['address']
+        detail_address = location['detail_address']
+        name = location['name']
+        map = location['map']
+        dong = location['dong']
+        post['address'] = address
+        post['detail_address'] = detail_address
+        post['name'] = name
+        post['map'] = map
+        post['dong'] = dong
+
+        print(result)
+
+        #selected_fields = {field: post.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
+        result.append(post)
     return result
 
 
