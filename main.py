@@ -77,7 +77,7 @@ class Post(BaseModel):
     emergency: bool
     start_date: datetime
     end_date: datetime
-    location_id: str = ""
+    location_id: str = "" # 최적화할 때 삭제
     female: bool
     status: str = "게시"
     borrower_user_id: Optional[str] = None
@@ -181,9 +181,11 @@ async def login(user: Login = Body(...)):
             my_info = doc.to_dict()
             borrow_list = my_info['borrow_list']
             lend_list = my_info['lend_list']
+            chat_list = my_info['chat_list']
 
             result_borrow_list = []
             result_lend_list = []
+            result_chat_list = []
 
             # borrow_list, lend_list 실제 post 정보로 채우기
             for post_id in borrow_list:
@@ -236,6 +238,10 @@ async def login(user: Login = Body(...)):
 
             my_info['borrow_list'] = result_borrow_list
             my_info['lend_list'] = result_lend_list
+
+
+            chat_list = []
+            # chat_list에 
 
             return my_info
         else:
@@ -401,7 +407,7 @@ async def add_post(data: Add_Post):
         post_dict = post.dict()
         post_dict["writer_id"] = user_id
         post_dict["post_id"] = doc_ref1.id
-        post_dict["location_id"] = doc_ref2.id
+        post_dict["location_id"] = doc_ref2.id # 최적화 시 삭제
         doc_ref1.set(post_dict)
 
         location_dict = location.dict()
@@ -409,9 +415,20 @@ async def add_post(data: Add_Post):
         location_dict["map"] = geopoint
         doc_ref2.set(location_dict)
 
+        # get_post 했을 떄처럼 반환: 이부분 최적화하면서 삭제
+        user = db.collection('user').document(user_id).get().to_dict() # user table
+        result = post_dict
+        result['nickname'] = user['nickname']
+        result['profile'] = user['image_url']
+        result['address'] = location_dict['address']
+        result['detail_address'] = location_dict['detail_address']
+        result['name'] = location_dict['name']
+        result['map'] = location_dict['map']
+        result['dong'] =location_dict['dong']
+
     except Exception as e:
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
-    return {"message": "Post successfully added"}
+    return result
 
 
 @app.post("/upload_image")
