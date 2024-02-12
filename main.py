@@ -455,5 +455,5 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 
 @app.get("/get_messages/{chat_id}")
 async def get_messages(chat_id: str):
-    messages = db.collection('chats').document(chat_id).collection('messages').stream()
+    messages = db.collection('chats').document(chat_id).collection('messages').order_by('time').stream()
     return {"messages": [doc.to_dict() for doc in messages]}
