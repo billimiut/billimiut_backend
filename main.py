@@ -187,76 +187,79 @@ async def login(user: Login = Body(...)):
             result_chat_list = []
 
             # borrow_list, lend_list 실제 post 정보로 채우기
-            for post_id in borrow_list:
-                post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
+            if borrow_list is not None:
+                for post_id in borrow_list:
+                    post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
 
-                # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-                user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-                nickname = user['nickname']
-                profile = user['image_url']
-                post['nickname'] = nickname
-                post['profile'] = profile
+                    # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+                    user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+                    nickname = user['nickname']
+                    profile = user['image_url']
+                    post['nickname'] = nickname
+                    post['profile'] = profile
 
-                # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-                location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-                address = location['address']
-                detail_address = location['detail_address']
-                name = location['name']
-                map = location['map']
-                dong = location['dong']
-                post['address'] = address
-                post['detail_address'] = detail_address
-                post['name'] = name
-                post['map'] = map
-                post['dong'] = dong
-                result_borrow_list.append(post)
+                    # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+                    location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+                    address = location['address']
+                    detail_address = location['detail_address']
+                    name = location['name']
+                    map = location['map']
+                    dong = location['dong']
+                    post['address'] = address
+                    post['detail_address'] = detail_address
+                    post['name'] = name
+                    post['map'] = map
+                    post['dong'] = dong
+                    result_borrow_list.append(post)
 
-            for post_id in lend_list:
-                post = db.collection('post').document(post_id).get().to_dict # post_id에 해당하는 post 가져옴
-                
-                # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-                user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-                nickname = user['nickname']
-                profile = user['image_url']
-                post['nickname'] = nickname
-                post['profile'] = profile
+            if lend_list is not None:
+                for post_id in lend_list:
+                    post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
+                    
+                    # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
+                    user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
+                    nickname = user['nickname']
+                    profile = user['image_url']
+                    post['nickname'] = nickname
+                    post['profile'] = profile
 
-                # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-                location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-                address = location['address']
-                detail_address = location['detail_address']
-                name = location['name']
-                map = location['map']
-                dong = location['dong']
-                post['address'] = address
-                post['detail_address'] = detail_address
-                post['name'] = name
-                post['map'] = map
-                post['dong'] = dong
-                result_lend_list.append(post)
+                    # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
+                    location = db.collection('location').document(post['location_id']).get().to_dict() # location table
+                    address = location['address']
+                    detail_address = location['detail_address']
+                    name = location['name']
+                    map = location['map']
+                    dong = location['dong']
+                    post['address'] = address
+                    post['detail_address'] = detail_address
+                    post['name'] = name
+                    post['map'] = map
+                    post['dong'] = dong
+                    result_lend_list.append(post)
 
             # chat_list에 neighbor_id, post_id, neighbor_nickname, neighbor_profile, last_message, last_message_time
-            for chat in chat_list:
-                neighbor_chat_info = {}
+            if chat_list is not None:
+                for chat in chat_list:
+                    neighbor_chat_info = {}
 
-                neighbor_id, post_id = chat.split("-")
-                neighbor_chat_info['neighbor_id'] = neighbor_id
-                neighbor_chat_info['post_id'] = post_id
+                    neighbor_id, post_id = chat.split("-")
+                    neighbor_chat_info['neighbor_id'] = neighbor_id
+                    neighbor_chat_info['post_id'] = post_id
 
-                chatting_room = sorted([user_id, neighbor_id])
-                chatting_room = ''.join(chatting_room)
-                
-                # neighbor 정보 저장
-                neighbor = db.collection('user').document(neighbor_id).get().to_dict() # user table
-                neighbor_chat_info['neighbor_nickname'] = neighbor['nickname']
-                neighbor_chat_info['neighbor_profile'] = neighbor['image_url']
+                    chatting_room = sorted([user_id, neighbor_id])
+                    chatting_room = ''.join(chatting_room)
+                    
+                    # neighbor 정보 저장
+                    neighbor = db.collection('user').document(neighbor_id).get().to_dict() # user table
+                    neighbor_chat_info['neighbor_nickname'] = neighbor['nickname']
+                    neighbor_chat_info['neighbor_profile'] = neighbor['image_url']
 
-                # chatting 정보 저장
-                collection_ref = db.collection('chats').document(chatting_room).collection('messages')
-                last_doc = next(collection_ref.order_by('time', direction=firestore.Query.DESCENDING).limit(1).stream()).to_dict()
-                neighbor_chat_info['last_message'] = last_doc['message']
-                neighbor_chat_info['last_message_time'] = last_doc['time']
-                result_chat_list.append(neighbor_chat_info)
+                    # chatting 정보 저장
+                    collection_ref = db.collection('chats').document(chatting_room).collection('messages')
+                    last_doc = next(collection_ref.order_by('time', direction=firestore.Query.DESCENDING).limit(1).stream()).to_dict()
+                    neighbor_chat_info['last_message'] = last_doc['message']
+                    neighbor_chat_info['last_message_time'] = last_doc['time']
+                    result_chat_list.append(neighbor_chat_info)
 
             #chat_list
             my_info['borrow_list'] = result_borrow_list
