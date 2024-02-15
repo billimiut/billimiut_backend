@@ -365,6 +365,28 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
     return {"urls": urls}
 
+@app.post("/change_status")
+async def change_status(post_id: str, status: str):
+    try:
+        doc_ref = db.collection('post').document(post_id)
+        post = doc_ref.get().to_dict()
+        if post is None:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+        before_status = post["status"]
+        if before_status == "게시":
+            doc_ref.update({
+                'status': '빌림중'
+            })
+        elif before_status == "빌림중":
+            doc_ref.update({
+                'status': '종료'
+            })
+        after_status = doc_ref.get().to_dict()["status"]
+        return {"before_status": before_status, "after_status": after_status}
+
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
