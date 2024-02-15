@@ -77,12 +77,18 @@ class Post(BaseModel):
     emergency: bool
     start_date: datetime
     end_date: datetime
-    location_id: str = "" # 최적화할 때 삭제
     female: bool
     status: str = "게시"
     borrower_user_id: Optional[str] = None
     lender_user_id: Optional[str] = None
-
+    nickname: str
+    profile: str = ""
+    address: str = ""
+    detail_address: str
+    name: str = ""
+    map: GeoPoint = GeoPoint()
+    dong: str = ""
+    
 class Login(BaseModel):
     id: str
     pw: str
@@ -118,19 +124,6 @@ class ImageUrl(BaseModel):
 class User_Location(BaseModel):
     user_id: str
     location: str
-
-class Location(BaseModel):
-    location_id: str = ""
-    map: GeoPoint = GeoPoint()
-    address: str = ""
-    detail_address: str = ""
-    name: str = ""
-    dong: str = ""
-
-class Add_Post(BaseModel):
-    user_id: str
-    post: Post
-    location: Location
 
 class ConnectionManager:
     def __init__(self):
@@ -190,51 +183,11 @@ async def login(user: Login = Body(...)):
             if borrow_list is not None:
                 for post_id in borrow_list:
                     post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
-
-                    # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-                    user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-                    nickname = user['nickname']
-                    profile = user['image_url']
-                    post['nickname'] = nickname
-                    post['profile'] = profile
-
-                    # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-                    location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-                    address = location['address']
-                    detail_address = location['detail_address']
-                    name = location['name']
-                    map = location['map']
-                    dong = location['dong']
-                    post['address'] = address
-                    post['detail_address'] = detail_address
-                    post['name'] = name
-                    post['map'] = map
-                    post['dong'] = dong
                     result_borrow_list.append(post)
 
             if lend_list is not None:
                 for post_id in lend_list:
                     post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
-                    
-                    # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-                    user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-                    nickname = user['nickname']
-                    profile = user['image_url']
-                    post['nickname'] = nickname
-                    post['profile'] = profile
-
-                    # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-                    location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-                    address = location['address']
-                    detail_address = location['detail_address']
-                    name = location['name']
-                    map = location['map']
-                    dong = location['dong']
-                    post['address'] = address
-                    post['detail_address'] = detail_address
-                    post['name'] = name
-                    post['map'] = map
-                    post['dong'] = dong
                     result_lend_list.append(post)
 
             # chat_list에 neighbor_id, post_id, neighbor_nickname, neighbor_profile, last_message, last_message_time
@@ -336,27 +289,6 @@ async def get_post(post_id: str):
 
     if post_doc.exists:
         post = post_doc.to_dict() # post 딕셔너리
-        
-        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-        nickname = user['nickname']
-        profile = user['image_url']
-        post['nickname'] = nickname
-        post['profile'] = profile
-
-        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-        address = location['address']
-        detail_address = location['detail_address']
-        name = location['name']
-        map = location['map']
-        dong = location['dong']
-        post['address'] = address
-        post['detail_address'] = detail_address
-        post['name'] = name
-        post['map'] = map
-        post['dong'] = dong
-
         return post
     else:
         return {"error": "Document does not exist"}
@@ -369,30 +301,6 @@ async def read_posts():
     result = []
     for doc in docs:
         post = doc.to_dict()
-
-        # post에서의 writer_id로 user에 접근해서 nickname, image_url 뽑아와서 post에 추가    
-        user = db.collection('user').document(post['writer_id']).get().to_dict() # user table
-        nickname = user['nickname']
-        profile = user['image_url']
-        post['nickname'] = nickname
-        post['profile'] = profile
-
-        # post에서의 location_id로 location에 접근해서 address, detail_address, name, map, dong 초기화
-        location = db.collection('location').document(post['location_id']).get().to_dict() # location table
-        address = location['address']
-        detail_address = location['detail_address']
-        name = location['name']
-        map = location['map']
-        dong = location['dong']
-        post['address'] = address
-        post['detail_address'] = detail_address
-        post['name'] = name
-        post['map'] = map
-        post['dong'] = dong
-
-        print(result)
-
-        #selected_fields = {field: post.get(field, None) for field in ['post_id', 'writer_id', 'title', 'description', 'item', 'image_url', 'money', 'borrow', 'description', 'emergency', 'start_date', 'end_date', 'location_id', 'female', 'status', 'category_id', 'borrower_user_id', 'lender_user_id', 'chat_list']}
         result.append(post)
     return result
 
@@ -408,12 +316,7 @@ async def get_location(location_id: str):
 
 
 @app.post("/add_post")
-async def add_post(data: Add_Post):
-    user_id = data.user_id
-    post = data.post
-    location = data.location
-    geopoint = firestore.GeoPoint(data.location.map.latitude, data.location.map.longitude)
-
+async def add_post(user_id: str, post: Post):
     # 빌린 사람/빌려준 사람 초기화
     if post.borrow:
         post.borrower_user_id = user_id
@@ -422,35 +325,22 @@ async def add_post(data: Add_Post):
         post.lender_user_id = user_id
         post.borrower_user_id = ""
 
-    doc_ref1 = db.collection('post').document()
-    doc_ref2 = db.collection('location').document()
+    doc_ref = db.collection('post').document()
     
     try:
         post_dict = post.dict()
         post_dict["writer_id"] = user_id
-        post_dict["post_id"] = doc_ref1.id
-        post_dict["location_id"] = doc_ref2.id # 최적화 시 삭제
-        doc_ref1.set(post_dict)
+        post_dict["post_id"] = doc_ref.id
 
-        location_dict = location.dict()
-        location_dict["location_id"] = doc_ref2.id
-        location_dict["map"] = geopoint
-        doc_ref2.set(location_dict)
-
-        # get_post 했을 떄처럼 반환: 이부분 최적화하면서 삭제
         user = db.collection('user').document(user_id).get().to_dict() # user table
-        result = post_dict
-        result['nickname'] = user['nickname']
-        result['profile'] = user['image_url']
-        result['address'] = location_dict['address']
-        result['detail_address'] = location_dict['detail_address']
-        result['name'] = location_dict['name']
-        result['map'] = location_dict['map']
-        result['dong'] =location_dict['dong']
+        post_dict['nickname'] = user['nickname']
+        post_dict['profile'] = user['image_url']
+
+        doc_ref.set(post_dict)
 
     except Exception as e:
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
-    return result
+    return post_dict
 
 
 @app.post("/upload_image")
