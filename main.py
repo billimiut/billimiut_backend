@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
+import pytz
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -77,6 +78,7 @@ class Post(BaseModel):
     emergency: bool
     start_date: datetime
     end_date: datetime
+    post_time: datetime
     female: bool
     status: str = "게시"
     borrower_user_id: Optional[str] = None
@@ -331,6 +333,9 @@ async def add_post(user_id: str, post: Post):
         post_dict = post.dict()
         post_dict["writer_id"] = user_id
         post_dict["post_id"] = doc_ref.id
+        korea = pytz.timezone('Asia/Seoul')
+        now = datetime.now(korea)
+        post_dict["post_time"] = now
 
         user = db.collection('user').document(user_id).get().to_dict() # user table
         post_dict['nickname'] = user['nickname']
