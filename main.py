@@ -1,6 +1,7 @@
 import os, json
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
+from apscheduler.schedulers.background import BackgroundScheduler
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
@@ -365,8 +366,9 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
     return {"urls": urls}
 
+
 @app.post("/change_status")
-async def change_status(post_id: str, status: str):
+async def change_status(post_id: str):
     try:
         doc_ref = db.collection('post').document(post_id)
         post = doc_ref.get().to_dict()
@@ -387,6 +389,18 @@ async def change_status(post_id: str, status: str):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.delete("/delete_post")
+async def delete_post(post_id: str):
+    doc_ref = db.collection('post').document(post_id)
+
+    try:
+        doc_ref.delete()
+        return {"message": "Post has been successfully deleted."}
+    except Exception as e:
+        return {"message": "An error occurred while deleting post.", "exception": e}
+
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
