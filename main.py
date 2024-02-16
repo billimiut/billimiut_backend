@@ -1,11 +1,11 @@
-import os, json
+import os, json, pytz, asyncio, threading
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
-import pytz
+from apscheduler.schedulers.background import BackgroundScheduler
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -525,3 +525,32 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 async def get_messages(chat_id: str):
     messages = db.collection('chats').document(chat_id).collection('messages').order_by('time').stream()
     return {"messages": [doc.to_dict() for doc in messages]}
+
+
+# 게시글 자동 종료
+def check_end_date():
+    docs = db.collection('test').get() # 모든 post 가져옴
+
+    for doc in docs:
+        post = doc.to_dict()
+        end_date = post['end_date']
+        status = post['status']
+        now = datetime.now(pytz.timezone('Asia/Seoul'))
+
+        # end_date가 현재 시간을 초과한 경우, status를 변경합니다.
+        if end_date < now and status == "게시":
+            db.collection('test').document(doc.id).update({
+                'status': '종료'
+            })
+
+    print("Checking end_date...")
+
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(check_end_date, "interval", seconds=3)
+    scheduler.start()
+
+@app.on_event("startup")
+async def startup_event():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, start_scheduler)
