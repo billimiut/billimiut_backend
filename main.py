@@ -255,12 +255,23 @@ async def set_nickname(nickname_data: Nickname = Body(...)):
 
 #ok
 @app.post("/set_image_url")
-async def set_image_url(image_url_data: ImageUrl = Body(...)):
-    user_ref = db.collection('user').document(image_url_data.user_id)
+async def set_image_url(user_id: str, image: UploadFile = File(...)):
+    user_ref = db.collection('user').document(user_id)
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    user_ref.update({"image_url": image_url_data.image_url})
+    
+    # storage에 이미지 업로드
+    if not (image.content_type == 'image/jpeg' or image.content_type == 'image/jpg' or image.content_type == 'image/png'):
+        raise HTTPException(status_code=400, detail="Invalid file type.")
+    
+    fileName = f'{datetime.now().timestamp()}.jpg'
+    blob = storage.bucket().blob(f'post_images/{fileName}')
+    blob.upload_from_file(image.file, content_type=image.content_type)
+
+    url = blob.generate_signed_url(timedelta(days=365))
+    user_ref.update({"image_url": url})
+
     return {"message": "Image URL successfully updated"}
 
 #ok
