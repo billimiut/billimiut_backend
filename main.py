@@ -1,7 +1,6 @@
 import os, json
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
-from apscheduler.schedulers.background import BackgroundScheduler
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
@@ -72,7 +71,7 @@ class Post(BaseModel):
     title: str
     item: str
     category: str # 변경
-    image_url: List[str]
+    image_url: List[str] =[]
     money: int
     borrow: bool
     description: str
@@ -87,7 +86,7 @@ class Post(BaseModel):
     nickname: str
     profile: str = ""
     address: str = ""
-    detail_address: str
+    detail_address: str = ""
     name: str = ""
     map: GeoPoint = GeoPoint()
     dong: str = ""
@@ -228,6 +227,38 @@ async def login(user: Login = Body(...)):
     except Exception:
         return {"message": "An exception occurred."}
 
+
+@app.get("/get_borrow_lend_list")
+async def get_borrow_lend_list(user_id: str):
+    doc_ref = db.collection('user').document(user_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        my_info = doc.to_dict()
+        borrow_list = my_info['borrow_list']
+        lend_list = my_info['lend_list']
+        
+        result_borrow_list = []
+        result_lend_list = []
+
+        if borrow_list is not None:
+            # borrow_list를 30개씩 분할
+            chunks = [borrow_list[i:i + 30] for i in range(0, len(borrow_list), 30)]
+            for chunk in chunks:
+                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
+                for post in posts:
+                    result_borrow_list.append(post.to_dict())
+        
+        if lend_list is not None:
+            # lend_list를 30개씩 분할
+            chunks = [lend_list[i:i + 30] for i in range(0, len(lend_list), 30)]
+            for chunk in chunks:
+                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
+                for post in posts:
+                    result_lend_list.append(post.to_dict())
+
+        return {"borrow_list": result_borrow_list, "lend_list": result_lend_list}
+
 #ok
 @app.post("/signup")
 async def signup(user: User = Body(...)):
@@ -295,7 +326,7 @@ async def get_post(post_id: str):
         return post
     else:
         return {"error": "Document does not exist"}
-
+        
 #ok
 @app.get("/get_posts")
 async def read_posts():
@@ -306,6 +337,42 @@ async def read_posts():
         post = doc.to_dict()
         result.append(post)
     return result
+
+
+@app.get("/get_chatting_room")
+async def get_chatting_room(user_id: str):
+    doc_ref = db.collection('user').document(user_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        chat_list = doc.to_dict()['chat_list']
+        result_chat_list = []
+
+        # chat_list에 neighbor_id, post_id, neighbor_nickname, neighbor_profile, last_message, last_message_time
+        if chat_list is not None:
+            for chat in chat_list:
+                neighbor_chat_info = {}
+
+                neighbor_id, post_id = chat.split("-")
+                neighbor_chat_info['neighbor_id'] = neighbor_id
+                neighbor_chat_info['post_id'] = post_id
+
+                chatting_room = sorted([user_id, neighbor_id])
+                chatting_room = ''.join(chatting_room)
+                
+                # neighbor 정보 저장
+                neighbor = db.collection('user').document(neighbor_id).get().to_dict() # user table
+                neighbor_chat_info['neighbor_nickname'] = neighbor['nickname']
+                neighbor_chat_info['neighbor_profile'] = neighbor['image_url']
+
+                # chatting 정보 저장
+                collection_ref = db.collection('chats').document(chatting_room).collection('messages')
+                last_doc = next(collection_ref.order_by('time', direction=firestore.Query.DESCENDING).limit(1).stream()).to_dict()
+                neighbor_chat_info['last_message'] = last_doc['message']
+                neighbor_chat_info['last_message_time'] = last_doc['time']
+                result_chat_list.append(neighbor_chat_info)
+
+        return result_chat_list
 
 
 @app.get("/get_location")
