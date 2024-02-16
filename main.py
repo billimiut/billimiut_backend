@@ -227,38 +227,6 @@ async def login(user: Login = Body(...)):
     except Exception:
         return {"message": "An exception occurred."}
 
-
-@app.get("/get_borrow_lend_list")
-async def get_borrow_lend_list(user_id: str):
-    doc_ref = db.collection('user').document(user_id)
-    doc = doc_ref.get()
-    
-    if doc.exists:
-        my_info = doc.to_dict()
-        borrow_list = my_info['borrow_list']
-        lend_list = my_info['lend_list']
-        
-        result_borrow_list = []
-        result_lend_list = []
-
-        if borrow_list is not None:
-            # borrow_list를 30개씩 분할
-            chunks = [borrow_list[i:i + 30] for i in range(0, len(borrow_list), 30)]
-            for chunk in chunks:
-                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
-                for post in posts:
-                    result_borrow_list.append(post.to_dict())
-        
-        if lend_list is not None:
-            # lend_list를 30개씩 분할
-            chunks = [lend_list[i:i + 30] for i in range(0, len(lend_list), 30)]
-            for chunk in chunks:
-                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
-                for post in posts:
-                    result_lend_list.append(post.to_dict())
-
-        return {"borrow_list": result_borrow_list, "lend_list": result_lend_list}
-
 #ok
 @app.post("/signup")
 async def signup(user: User = Body(...)):
@@ -338,6 +306,58 @@ async def read_posts():
         result.append(post)
     return result
 
+
+@app.get("/get_my_posts")
+async def get_my_posts(user_id: str):
+    doc_ref = db.collection('user').document(user_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        post_list = doc.to_dict()["posts"]
+        my_posts = []
+        
+        if post_list is not None:
+            # borrow_list를 30개씩 분할
+            chunks = [post_list[i:i + 30] for i in range(0, len(post_list), 30)]
+            for chunk in chunks:
+                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
+                for post in posts:
+                    my_posts.append(post.to_dict())
+
+        return my_posts
+
+
+@app.get("/get_borrow_lend_list")
+async def get_borrow_lend_list(user_id: str):
+    doc_ref = db.collection('user').document(user_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        my_info = doc.to_dict()
+        borrow_list = my_info['borrow_list']
+        lend_list = my_info['lend_list']
+        
+        result_borrow_list = []
+        result_lend_list = []
+
+        if borrow_list is not None:
+            # borrow_list를 30개씩 분할
+            chunks = [borrow_list[i:i + 30] for i in range(0, len(borrow_list), 30)]
+            for chunk in chunks:
+                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
+                for post in posts:
+                    result_borrow_list.append(post.to_dict())
+        
+        if lend_list is not None:
+            # lend_list를 30개씩 분할
+            chunks = [lend_list[i:i + 30] for i in range(0, len(lend_list), 30)]
+            for chunk in chunks:
+                posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
+                for post in posts:
+                    result_lend_list.append(post.to_dict())
+
+        return {"borrow_list": result_borrow_list, "lend_list": result_lend_list}
+    
 
 @app.get("/get_chatting_room")
 async def get_chatting_room(user_id: str):
