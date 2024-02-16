@@ -547,7 +547,7 @@ def check_end_date():
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(check_end_date, "interval", seconds=3)
+    scheduler.add_job(check_end_date, "interval", minutes=1)
     scheduler.start()
 
 @app.on_event("startup")
