@@ -1,4 +1,4 @@
-import os, json, pytz, asyncio, threading
+import os, json, pytz, asyncio
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
@@ -6,6 +6,7 @@ from firebase_admin import credentials, storage, firestore, exceptions, initiali
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
+from geopy.distance import geodesic
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -113,6 +114,8 @@ class User(BaseModel):
     keywords : List[str] = []
     lend_count: int = 0
     locations: List[str] = []
+    location: GeoPoint = GeoPoint()
+    dong: str
     chat_list: List[str] = []
 
 class Nickname(BaseModel):
@@ -336,6 +339,39 @@ async def get_my_posts(user_id: str):
                     my_posts.append(post.to_dict())
 
         return my_posts
+
+
+@app.get("/get_nearby_posts")
+def get_nearby_posts(user_id: str):
+    doc_ref = db.collection('user').document(user_id)
+    user = doc_ref.get().to_dict()
+
+    user_dong = user["dong"]
+    location = user["location"]
+    user_lat = location.latitude
+    user_lng = location.longitude
+    user_coords = (user_lat, user_lng)  # 사용자 위치
+
+    nearby_posts = []  # 반경 1km 이내의 게시물을 저장
+
+    posts_ref = db.collection('post').where('dong', '==', user_dong)
+    posts = posts_ref.get()
+
+    for post in posts:
+        post_data = post.to_dict()
+        post_location = post_data["map"]
+        post_lat = post_location.latitude
+        post_lng = post_location.longitude
+        post_coords = (post_lat, post_lng)  # 포스트 위치
+        print(user_coords, post_coords)
+        
+        distance = geodesic(user_coords, post_coords).km # 사용자 위치와 포스트 위치 간의 거리를 계산
+
+        # 거리가 1km 이내인 경우에만 리스트에 추가
+        if distance <= 1:
+            nearby_posts.append(post_data)
+
+    return nearby_posts
 
 
 @app.get("/get_borrow_lend_list")
