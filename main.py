@@ -473,18 +473,20 @@ async def add_post(user_id: str, post: Post):
         post.borrower_user_id = ""
 
     doc_ref = db.collection('post').document()
-    
     try:
         post_dict = post.dict()
         post_dict["writer_id"] = user_id
-        post_dict["post_id"] = doc_ref.id
+        post_id = doc_ref.id
+        post_dict["post_id"] = post_id
         korea = pytz.timezone('Asia/Seoul')
         now = datetime.now(korea)
         post_dict["post_time"] = now
 
-        user = db.collection('user').document(user_id).get().to_dict() # user table
+        user_ref = db.collection('user').document(user_id)
+        user = user_ref.get().to_dict() # user table
         post_dict['nickname'] = user['nickname']
         post_dict['profile'] = user['image_url']
+        user_ref.update({'posts': firestore.ArrayUnion([post_id])})
 
         doc_ref.set(post_dict)
 
