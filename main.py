@@ -115,7 +115,7 @@ class User(BaseModel):
     lend_count: int = 0
     locations: List[str] = []
     location: GeoPoint = GeoPoint()
-    dong: str
+    dong: str = ""
     chat_list: List[str] = []
 
 class Nickname(BaseModel):
@@ -130,14 +130,17 @@ class User_Location(BaseModel):
     user_id: str
     location: str
 
+# 웹소켓 연결 관리
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: Dict[str, WebSocket] = {} # 웹소켓 연결 관리 위한 딕셔너리, 연결된 클라이언트만 존재
 
+    # 클라이언트가 서버에 연결됐을 때 호출
     async def connect(self, websocket: WebSocket, client_id: str):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
+        await websocket.accept() # 웹소켓 연결 수락
+        self.active_connections[client_id] = websocket # 클라이언트-웹소켓 새로운 연결 추가
 
+    # 클라이언트의 연결 종료
     async def disconnect(self, client_id: str):
         websocket = self.active_connections[client_id]
         await websocket.close()
@@ -147,6 +150,13 @@ class ConnectionManager:
         websocket = self.active_connections.get(receiver_id)
         if websocket:
             await websocket.send_text(message)
+        else:
+            # 새로운 WebSocket 객체 생성
+            new_websocket = WebSocket(...)
+            # 연결 관리자의 connect 메서드 호출
+            await self.connect(new_websocket, receiver_id)
+            # 메시지 전송
+            await new_websocket.send_text(message)
 
 manager = ConnectionManager()
 
@@ -538,21 +548,22 @@ async def delete_post(post_id: str):
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket, client_id)
+    await manager.connect(websocket, client_id) # sender 웹소켓 연결
     try:
         while True:
-            data = await websocket.receive_text()
-            data_json = json.loads(data)
+            data = await websocket.receive_text() # sender가 보낸 메시지
+            data_json = json.loads(data) # 메시지를 json으로 파싱
             message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
             db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
             await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
             # Update the chat_list field in each user's document
-            user_doc_A = db.collection('user').document(message.sender_id)
-            user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
-            user_doc_B = db.collection('user').document(message.receiver_id)
-            user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
+            # user_doc_A = db.collection('user').document(message.sender_id)
+            # user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
+            # user_doc_B = db.collection('user').document(message.receiver_id)
+            # user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
     except WebSocketDisconnect:
         await manager.disconnect(client_id)
 
