@@ -108,7 +108,8 @@ class User(BaseModel):
     borrow_list: List[str] = []
     lend_list: List[str] = []
     temperature: float = 36.5
-    total_money: int = 0
+    borrow_money: int = 0
+    lend_money: int = 0
     borrow_count: int = 0
     image_url: str = ""
     keywords : List[str] = []
@@ -464,15 +465,8 @@ async def get_location(location_id: str):
 
 @app.post("/add_post")
 async def add_post(user_id: str, post: Post):
-    # 빌린 사람/빌려준 사람 초기화
-    if post.borrow:
-        post.borrower_user_id = user_id
-        post.lender_user_id = ""
-    else:
-        post.lender_user_id = user_id
-        post.borrower_user_id = ""
-
     doc_ref = db.collection('post').document()
+
     try:
         post_dict = post.dict()
         post_dict["writer_id"] = user_id
@@ -514,22 +508,41 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
 
 @app.post("/change_status")
-async def change_status(post_id: str):
+async def change_status(post_id: str, borrower_user_id: str, lender_user_id: str):
     try:
         doc_ref = db.collection('post').document(post_id)
         post = doc_ref.get().to_dict()
+        money = post["money"]
+
         if post is None:
             raise HTTPException(status_code=404, detail="Post not found")
 
         before_status = post["status"]
         if before_status == "게시":
+            borrower_ref = db.collection('user').document(borrower_user_id)
+            lender_ref = db.collection('user').document(lender_user_id)
+
             doc_ref.update({
-                'status': '빌림중'
+                'status': '빌림중',
+                'borrower_user_id': borrower_user_id,
+                'lender_user_id': lender_user_id
+            })
+            
+            borrower_ref.update({
+                'borrow_count': firestore.Increment(1),
+                'borrow_list': firestore.ArrayUnion([post_id]),
+                'borrow_money': firestore.Increment(money)
+            })
+            lender_ref.update({
+                'lend_count': firestore.Increment(1),
+                'lend_list': firestore.ArrayUnion([post_id]),
+                'lend_money': firestore.Increment(money)
             })
         elif before_status == "빌림중":
             doc_ref.update({
                 'status': '종료'
             })
+            
         after_status = doc_ref.get().to_dict()["status"]
         return {"before_status": before_status, "after_status": after_status}
 
