@@ -451,14 +451,17 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    print("hi")
     await manager.connect(websocket, client_id)
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"Received data: {data}")
             data_json = json.loads(data)
             message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
             db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            print(message)
             await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
             # Update the chat_list field in each user's document
