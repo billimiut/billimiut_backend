@@ -1,5 +1,13 @@
 fastapi==0.63.0
-uvicorn==0.13.4
+uvicorn==0.11.3
 pydantic==1.8.1
 python-multipart==0.0.5
 firebase-admin==4.5.0
+httptools==0.1.0
+pytz==2024.1
+apscheduler==3.10.4
+geopy==2.4.1
+broadcaster==0.2.0
+asyncio==3.4.3
+asyncio_redis==0.16.0
+broadcaster[redis,postgres,kafka]
