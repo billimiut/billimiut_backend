@@ -129,7 +129,8 @@ class ImageUrl(BaseModel):
 
 class User_Location(BaseModel):
     user_id: str
-    location: str
+    latitude: float
+    longitude: float
 
 # 웹소켓 연결 관리
 class ConnectionManager:
@@ -295,7 +296,10 @@ async def set_locations(location_data: User_Location = Body(...)):
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    user_ref.update({"locations": firestore.ArrayUnion([location_data.location])})
+    user_ref.update({
+        'location': firestore.GeoPoint(location_data.latitude, location_data.longitude)
+    })
+    
     return {"message": "Location successfully added"}
 
 #ok
