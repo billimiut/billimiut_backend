@@ -141,6 +141,19 @@ class ConnectionManager:
         await websocket.accept() # 웹소켓 연결 수락
         self.active_connections[client_id] = websocket # 클라이언트-웹소켓 새로운 연결 추가
 
+    async def receive_message(self, client_id: str):
+        try:
+            websocket = self.active_connections[client_id]
+            while True:
+                data = await websocket.receive_text()
+                for client, ws in self.active_connections.items():  # 메시지를 모든 클라이언트에게 전달
+                    if client != client_id:  # 자신을 제외
+                        await ws.send_text(f"{client_id}: {data}")
+        except WebSocketDisconnect:  # 연결이 끊어진 경우
+            self.active_connections.pop(client_id)
+            for client, ws in self.active_connections.items():
+                await ws.send_text(f"{client_id} has left the chat.")  # 다른 클라이언트에게 연결 종료 알림
+
     # 클라이언트의 연결 종료
     async def disconnect(self, client_id: str):
         websocket = self.active_connections[client_id]
@@ -151,13 +164,13 @@ class ConnectionManager:
         websocket = self.active_connections.get(receiver_id)
         if websocket:
             await websocket.send_text(message)
-        else:
+        '''else:
             # 새로운 WebSocket 객체 생성
             new_websocket = WebSocket(...)
             # 연결 관리자의 connect 메서드 호출
             await self.connect(new_websocket, receiver_id)
             # 메시지 전송
-            await new_websocket.send_text(message)
+            await new_websocket.send_text(message)'''
 
 manager = ConnectionManager()
 
@@ -570,7 +583,8 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             data_json = json.loads(data) # 메시지를 json으로 파싱
             message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
-            db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            print(f"Message content: {message.dict()}")
+            #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
             await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
