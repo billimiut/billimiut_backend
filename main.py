@@ -547,7 +547,7 @@ async def edit_post(post: Edit_Post = Body(...)):
     
     doc_ref.update(post_dict)
     
-    return {"message": "Post updated successfully"}
+    return post_dict
 
 
 @app.post("/upload_image")
