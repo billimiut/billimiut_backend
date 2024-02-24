@@ -139,6 +139,7 @@ class ConnectionManager:
 
     # 클라이언트가 서버에 연결됐을 때 호출
     async def connect(self, websocket: WebSocket, client_id: str):
+        print("CONNECT")
         await websocket.accept() # 웹소켓 연결 수락
         self.active_connections[client_id] = websocket # 클라이언트-웹소켓 새로운 연결 추가
 
@@ -157,13 +158,15 @@ class ConnectionManager:
 
     # 클라이언트의 연결 종료
     async def disconnect(self, client_id: str):
-        websocket = self.active_connections[client_id]
-        await websocket.close()
-        del self.active_connections[client_id]
+        websocket = self.active_connections.get(client_id)
+        if websocket is not None:
+            await websocket.close()
+            del self.active_connections[client_id]
 
     async def send_personal_message(self, message: str, receiver_id: str):
         websocket = self.active_connections.get(receiver_id)
         if websocket:
+            print(message)
             await websocket.send_text(message)
         '''else:
             # 새로운 WebSocket 객체 생성
@@ -267,8 +270,13 @@ async def signup(user: User = Body(...)):
         user_data = user.dict()
         user_data['user_id'] = user_record.uid
         db.collection('user').document(user_record.uid).set(user_data)
-    except exceptions.FirebaseError:
-        raise HTTPException(status_code=400, detail="User creation failed")
+    except exceptions.FirebaseError as e:
+        if e.code == 'ALREADY_EXISTS':
+            return {"message": "0"}  # 이메일이 이미 사용 중인 경우
+        else:
+            return {"message": "1"}  # 그 외의 경우
+    except Exception:  # 그 외의 모든 예외를 처리합니다.
+        return {"message": "1"}
     return {"message": "User successfully created"}
 
 #ok
@@ -609,7 +617,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"Message content: {message.dict()}")
             #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
-            await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
+            await manager.send_personal_message(f"Message text was: {message.message}", client_id)
 
             # Update the chat_list field in each user's document
             # user_doc_A = db.collection('user').document(message.sender_id)
