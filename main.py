@@ -91,6 +91,24 @@ class Post(BaseModel):
     name: str = ""
     map: GeoPoint = GeoPoint()
     dong: str = ""
+
+class Edit_Post(BaseModel):
+    post_id: str = ""
+    title: str
+    item: str
+    category: str # 변경
+    image_url: List[str] =[]
+    money: int
+    borrow: bool
+    description: str
+    start_date: datetime
+    end_date: datetime
+    female: bool
+    address: str = ""
+    detail_address: str = ""
+    name: str = ""
+    map: GeoPoint = GeoPoint()
+    dong: str = ""
     
 class Login(BaseModel):
     id: str
@@ -491,6 +509,24 @@ async def add_post(user_id: str, post: Post):
     except Exception as e:
         raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
     return post_dict
+
+@app.put("/edit_post")
+async def edit_post(post: Edit_Post = Body(...)):
+    doc_ref = db.collection('post').document(post.post_id)
+    
+    if not doc_ref.get().exists:
+        return {"error": "Post does not exist"}
+    
+    now = datetime.now(pytz.timezone('Asia/Seoul'))
+    emergency = True if post.start_date - now <= timedelta(minutes=30) else False
+    
+    post_dict = post.dict()
+    post_dict['map'] = firestore.GeoPoint(post_dict['map']['latitude'], post_dict['map']['longitude'])
+    post_dict['emergency'] = emergency
+    
+    doc_ref.update(post_dict)
+    
+    return {"message": "Post updated successfully"}
 
 
 @app.post("/upload_image")
