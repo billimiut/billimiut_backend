@@ -129,7 +129,8 @@ class ImageUrl(BaseModel):
 
 class User_Location(BaseModel):
     user_id: str
-    location: str
+    latitude: float
+    longitude: float
 
 # 웹소켓 연결 관리
 class ConnectionManager:
@@ -308,7 +309,10 @@ async def set_locations(location_data: User_Location = Body(...)):
     user_doc = user_ref.get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    user_ref.update({"locations": firestore.ArrayUnion([location_data.location])})
+    user_ref.update({
+        'location': firestore.GeoPoint(location_data.latitude, location_data.longitude)
+    })
+    
     return {"message": "Location successfully added"}
 
 #ok
@@ -555,7 +559,7 @@ async def change_status(post_id: str, borrower_user_id: str, lender_user_id: str
             doc_ref.update({
                 'status': '종료'
             })
-            
+
         after_status = doc_ref.get().to_dict()["status"]
         return {"before_status": before_status, "after_status": after_status}
 
@@ -566,6 +570,25 @@ async def change_status(post_id: str, borrower_user_id: str, lender_user_id: str
 @app.delete("/delete_post")
 async def delete_post(post_id: str):
     doc_ref = db.collection('post').document(post_id)
+    post = doc_ref.get().to_dict()
+    writer_id = post["writer_id"]
+
+    if post["status"] == "게시":
+        user_ref = db.collection('user').document(writer_id)
+        user_ref.update({'posts': firestore.ArrayRemove([post_id])})
+    else: # 빌림중/종료
+        borrower_id = post["borrower_user_id"]
+        lender_id = post["lender_user_id"]
+        borrower_ref = db.collection('user').document(borrower_id)
+        lender_ref = db.collection('user').document(lender_id)
+
+        if writer_id == borrower_id: # 글 작성자가 빌린사람
+            borrower_ref.update({'posts': firestore.ArrayRemove([post_id])})
+        else: # 글 작성자가 빌려준 사람
+            lender_ref.update({'posts': firestore.ArrayRemove([post_id])})
+
+        borrower_ref.update({'borrow_list': firestore.ArrayRemove([post_id])})
+        lender_ref.update({'lend_list': firestore.ArrayRemove([post_id])})
 
     try:
         doc_ref.delete()
