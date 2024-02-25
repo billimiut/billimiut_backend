@@ -654,23 +654,71 @@ async def add_post(
 
 
 @app.put("/edit_post")
-async def edit_post(post: Edit_Post = Body(...)):
-    doc_ref = db.collection('post').document(post.post_id)
+async def edit_post(
+    post_id: str = Form(...),
+    title: str = Form(...),
+    item: str = Form(...),
+    category: str = Form(...),
+    money: int = Form(...),
+    borrow: bool = Form(...),
+    description: str = Form(...),
+    start_date: datetime = Form(...),
+    end_date: datetime = Form(...),
+    female: bool = Form(...),
+    address: str = Form(""),
+    detail_address: str = Form(""),
+    name: str = Form(""),
+    map_latitude: float = Form(0),
+    map_longitude: float = Form(0),
+    dong: str = Form(""),
+    images: List[UploadFile] = File(...)
+):
+    doc_ref = db.collection('post').document(post_id)
     
     if not doc_ref.get().exists:
         return {"error": "Post does not exist"}
     
-    now = datetime.now(pytz.timezone('Asia/Seoul'))
-    emergency = True if post.start_date - now <= timedelta(minutes=30) else False
-    
-    post_dict = post.dict()
-    post_dict['map'] = firestore.GeoPoint(post_dict['map']['latitude'], post_dict['map']['longitude'])
-    post_dict['emergency'] = emergency
-    
-    doc_ref.update(post_dict)
-    
-    return post_dict
+    urls = []
+    blobs = []
 
+    for image in images:
+        if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+        
+        fileName = f'{datetime.now().timestamp()}.jpg'
+        blob = storage.bucket().blob(f'post_images/{fileName}')
+        blob.upload_from_file(image.file, content_type=image.content_type)
+
+        url = blob.generate_signed_url(timedelta(days=365))
+        urls.append(url)
+        blobs.append(blob)
+        
+        print(f"Image {fileName} uploaded successfully.")
+    
+    now = datetime.now(pytz.timezone('Asia/Seoul'))
+    emergency = True if start_date - now <= timedelta(minutes=30) else False
+    
+    doc_ref.update({
+        "title": title,
+        "item": item,
+        "category": category,
+        "money": money,
+        "borrow": borrow,
+        "description": description,
+        "emergency": emergency,
+        "start_date": start_date,
+        "end_date": end_date,
+        "female": female,
+        "address": address,
+        "detail_address": detail_address,
+        "name": name,
+        "map": {"latitude": map_latitude, "longitude": map_longitude},
+        "dong": dong,
+        "image_url": urls,
+    })
+    
+    return doc_ref.get().to_dict()
+    
 
 @app.post("/upload_image")
 async def upload_image(images: List[UploadFile] = File(...)):
