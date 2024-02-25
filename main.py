@@ -1,5 +1,5 @@
-import os, json, pytz, asyncio
-from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
+import os, json, pytz, asyncio, io, base64
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
@@ -76,10 +76,10 @@ class Post(BaseModel):
     money: int
     borrow: bool
     description: str
-    emergency: bool
+    emergency: Optional[bool] = None
     start_date: datetime
     end_date: datetime
-    post_time: datetime
+    post_time: Optional[datetime] = None
     female: bool
     status: str = "게시"
     borrower_user_id: Optional[str] = None
@@ -555,31 +555,103 @@ async def get_location(location_id: str):
     else:
         return {"error": "Document does not exist"}
 
+# firebase storage에서 file 삭제
+def delete_file(file_path):
+    bucket = storage.bucket()
+    blob = bucket.blob(file_path)
+    blob.delete()
 
 @app.post("/add_post")
-async def add_post(user_id: str, post: Post):
+async def add_post(
+    user_id: str = Form(...),
+    title: str = Form(...),
+    item: str = Form(...),
+    category: str = Form(...),
+    money: int = Form(...),
+    borrow: bool = Form(...),
+    description: str = Form(...),
+    start_date: datetime = Form(...),
+    end_date: datetime = Form(...),
+    female: bool = Form(...),
+    address: str = Form(""),
+    detail_address: str = Form(""),
+    name: str = Form(""),
+    map_latitude: float = Form(0),
+    map_longitude: float = Form(0),
+    dong: str = Form(""),
+    images: List[UploadFile] = File(...)
+):
     doc_ref = db.collection('post').document()
 
-    try:
-        post_dict = post.dict()
-        post_dict["writer_id"] = user_id
-        post_id = doc_ref.id
-        post_dict["post_id"] = post_id
-        korea = pytz.timezone('Asia/Seoul')
-        now = datetime.now(korea)
-        post_dict["post_time"] = now
+    # upload images to firebase storage
+    urls = []
+    blobs = []
 
+    for image in images:
+        if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+            raise HTTPException(status_code=400, detail="Invalid file type.")
+        
+        fileName = f'{datetime.now().timestamp()}.jpg'
+        blob = storage.bucket().blob(f'post_images/{fileName}')
+        blob.upload_from_file(image.file, content_type=image.content_type)
+
+        url = blob.generate_signed_url(timedelta(days=365))
+        urls.append(url)
+        blobs.append(blob)
+        
+        print(f"Image {fileName} uploaded successfully.")
+
+    now = datetime.now(pytz.timezone('Asia/Seoul'))
+    emergency = True if start_date - now <= timedelta(minutes=30) else False
+    post_id = doc_ref.id
+
+    try:
         user_ref = db.collection('user').document(user_id)
         user = user_ref.get().to_dict() # user table
-        post_dict['nickname'] = user['nickname']
-        post_dict['profile'] = user['image_url']
-        user_ref.update({'posts': firestore.ArrayUnion([post_id])})
+        if user is None:
+            raise ValueError("User does not exist.")
 
+        # Create the post dictionary manually
+        post_dict = {
+            "post_id": post_id,
+            "writer_id": user_id,
+            "title": title,
+            "item": item,
+            "category": category,
+            "money": money,
+            "borrow": borrow,
+            "description": description,
+            "emergency": emergency,
+            "start_date": start_date,
+            "end_date": end_date,
+            "post_time": now,
+            "female": female,
+            "status": "게시",
+            "borrower_user_id": "",
+            "lender_user_id": "",
+            "nickname": user['nickname'],
+            "profile": user['image_url'],
+            "address": address,
+            "detail_address": detail_address,
+            "name": name,
+            "map": {"latitude": map_latitude, "longitude": map_longitude},
+            "dong": dong,
+            "image_url": urls,
+        }
+
+        user_ref.update({'posts': firestore.ArrayUnion([post_id])})
         doc_ref.set(post_dict)
 
+    except ValueError as ve:
+        for blob in blobs:
+            delete_file(blob.name)
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
+        for blob in blobs:
+            delete_file(blob.name)
+        raise HTTPException(status_code=500, detail=f"An error occurred while adding the Post: {str(e)}")
     return post_dict
+
 
 @app.put("/edit_post")
 async def edit_post(post: Edit_Post = Body(...)):
