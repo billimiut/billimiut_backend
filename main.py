@@ -122,10 +122,10 @@ class ConnectionManager:
             await websocket.close()
             del self.active_connections[client_id]
 
-    async def send_personal_message(self, message: str, receiver_id: str):
+    async def send_personal_message(self, message: str, time: str, receiver_id: str):
         websocket = self.active_connections.get(receiver_id)
         if websocket:
-            await websocket.send_text(f"Message text was: {message.message}, Time: {message.time}")
+            await websocket.send_text(f"Message: {message}, Time: {time}")
 
 manager = ConnectionManager()
 
@@ -767,7 +767,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"Message content: {message.dict()}")
             #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
-            await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
+            await manager.send_personal_message(message.message, message.time, message.receiver_id)
 
             # Update the chat_list field in each user's document
             #user_doc_A = db.collection('user').document(message.sender_id)
