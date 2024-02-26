@@ -1,9 +1,8 @@
 import os, json, pytz, asyncio, io, base64
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form
-from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, Tuple, cast
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from geopy.distance import geodesic
@@ -224,6 +223,17 @@ async def signup(user: User = Body(...)):
     except Exception:  # 그 외의 모든 예외를 처리합니다.
         return {"message": "1"}
     return {"message": "User successfully created"}
+
+
+@app.get("/oauth")
+def oauth():
+    return
+
+
+@app.get("/logout")
+def logout():
+    return
+
 
 #ok
 @app.post("/set_nickname")
