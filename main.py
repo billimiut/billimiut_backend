@@ -732,13 +732,14 @@ async def delete_post(post_id: str):
     doc_ref = db.collection('post').document(post_id)
     post = doc_ref.get().to_dict()
     writer_id = post["writer_id"]
+    status = post["status"]
+    borrower_id = post["borrower_user_id"]
+    lender_id = post["lender_user_id"]
 
-    if post["status"] == "게시":
+    if status == "게시" or (status == "종료" and borrower_id == ""):
         user_ref = db.collection('user').document(writer_id)
         user_ref.update({'posts': firestore.ArrayRemove([post_id])})
-    else: # 빌림중/종료
-        borrower_id = post["borrower_user_id"]
-        lender_id = post["lender_user_id"]
+    else:
         borrower_ref = db.collection('user').document(borrower_id)
         lender_ref = db.collection('user').document(lender_id)
 
