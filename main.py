@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from geopy.distance import geodesic
 
@@ -555,11 +555,6 @@ async def get_location(location_id: str):
     else:
         return {"error": "Document does not exist"}
 
-# firebase storage에서 file 삭제
-def delete_file(file_path):
-    bucket = storage.bucket()
-    blob = bucket.blob(file_path)
-    blob.delete()
 
 @app.post("/add_post")
 async def add_post(
@@ -579,29 +574,30 @@ async def add_post(
     map_latitude: float = Form(0),
     map_longitude: float = Form(0),
     dong: str = Form(""),
-    images: List[UploadFile] = File(...)
+    images: List[UploadFile] = File(None),
 ):
     doc_ref = db.collection('post').document()
 
+    print(type(images))
     # upload images to firebase storage
     urls = []
     blobs = []
+    if images is not None:
+        for image in images:
+            if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+                raise HTTPException(status_code=400, detail="Invalid file type.")
+            
+            fileName = f'{datetime.now().timestamp()}.jpg'
+            blob = storage.bucket().blob(f'post_images/{fileName}')
+            blob.upload_from_file(image.file, content_type=image.content_type)
 
-    for image in images:
-        if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
-            raise HTTPException(status_code=400, detail="Invalid file type.")
-        
-        fileName = f'{datetime.now().timestamp()}.jpg'
-        blob = storage.bucket().blob(f'post_images/{fileName}')
-        blob.upload_from_file(image.file, content_type=image.content_type)
+            url = blob.generate_signed_url(timedelta(days=365))
+            urls.append(url)
+            blobs.append(blob)
+            
+            print(f"Image {fileName} uploaded successfully.")
 
-        url = blob.generate_signed_url(timedelta(days=365))
-        urls.append(url)
-        blobs.append(blob)
-        
-        print(f"Image {fileName} uploaded successfully.")
-
-    now = datetime.now(pytz.timezone('Asia/Seoul'))
+    now = datetime.now(timezone.utc)
     emergency = True if start_date - now <= timedelta(minutes=30) else False
     post_id = doc_ref.id
 
@@ -644,11 +640,13 @@ async def add_post(
 
     except ValueError as ve:
         for blob in blobs:
-            delete_file(blob.name)
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         for blob in blobs:
-            delete_file(blob.name)
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
         raise HTTPException(status_code=500, detail=f"An error occurred while adding the Post: {str(e)}")
     return post_dict
 
@@ -671,53 +669,60 @@ async def edit_post(
     map_latitude: float = Form(0),
     map_longitude: float = Form(0),
     dong: str = Form(""),
-    images: List[UploadFile] = File(...)
+    images: List[UploadFile] = File(None),
 ):
     doc_ref = db.collection('post').document(post_id)
     
     if not doc_ref.get().exists:
-        return {"error": "Post does not exist"}
+        raise HTTPException(status_code=404, detail="Post does not exist")
     
     urls = []
     blobs = []
+    try:
+        if images is not None:
+            for image in images:
+                if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+                    raise HTTPException(status_code=400, detail="Invalid file type.")
+                
+                fileName = f'{datetime.now().timestamp()}.jpg'
+                blob = storage.bucket().blob(f'post_images/{fileName}')
+                blob.upload_from_file(image.file, content_type=image.content_type)
 
-    for image in images:
-        if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
-            raise HTTPException(status_code=400, detail="Invalid file type.")
+                url = blob.generate_signed_url(timedelta(days=365))
+                urls.append(url)
+                blobs.append(blob)
+                
+                print(f"Image {fileName} uploaded successfully.")
         
-        fileName = f'{datetime.now().timestamp()}.jpg'
-        blob = storage.bucket().blob(f'post_images/{fileName}')
-        blob.upload_from_file(image.file, content_type=image.content_type)
-
-        url = blob.generate_signed_url(timedelta(days=365))
-        urls.append(url)
-        blobs.append(blob)
+        now = datetime.now(timezone.utc)
+        emergency = True if start_date - now <= timedelta(minutes=30) else False
         
-        print(f"Image {fileName} uploaded successfully.")
+        doc_ref.update({
+            "title": title,
+            "item": item,
+            "category": category,
+            "money": money,
+            "borrow": borrow,
+            "description": description,
+            "emergency": emergency,
+            "start_date": start_date,
+            "end_date": end_date,
+            "female": female,
+            "address": address,
+            "detail_address": detail_address,
+            "name": name,
+            "map": {"latitude": map_latitude, "longitude": map_longitude},
+            "dong": dong,
+            "image_url": urls,
+        })
+        
+        return doc_ref.get().to_dict()
     
-    now = datetime.now(pytz.timezone('Asia/Seoul'))
-    emergency = True if start_date - now <= timedelta(minutes=30) else False
-    
-    doc_ref.update({
-        "title": title,
-        "item": item,
-        "category": category,
-        "money": money,
-        "borrow": borrow,
-        "description": description,
-        "emergency": emergency,
-        "start_date": start_date,
-        "end_date": end_date,
-        "female": female,
-        "address": address,
-        "detail_address": detail_address,
-        "name": name,
-        "map": {"latitude": map_latitude, "longitude": map_longitude},
-        "dong": dong,
-        "image_url": urls,
-    })
-    
-    return doc_ref.get().to_dict()
+    except Exception as e:
+        for blob in blobs:
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
+        raise HTTPException(status_code=500, detail="An error occurred while updating the post")
     
 
 @app.post("/upload_image")
