@@ -112,7 +112,6 @@ class ConnectionManager:
 
     # 클라이언트가 서버에 연결됐을 때 호출
     async def connect(self, websocket: WebSocket, client_id: str):
-        print("CONNECT")
         await websocket.accept() # 웹소켓 연결 수락
         self.active_connections[client_id] = websocket # 클라이언트-웹소켓 새로운 연결 추가
 
@@ -126,8 +125,7 @@ class ConnectionManager:
     async def send_personal_message(self, message: str, receiver_id: str):
         websocket = self.active_connections.get(receiver_id)
         if websocket:
-            print(message)
-            await websocket.send_text(message)
+            await websocket.send_text(f"Message text was: {message.message}, Time: {message.time}")
 
 manager = ConnectionManager()
 
@@ -761,10 +759,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
             # Update the chat_list field in each user's document
-            # user_doc_A = db.collection('user').document(message.sender_id)
-            # user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
-            # user_doc_B = db.collection('user').document(message.receiver_id)
-            # user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
+            #user_doc_A = db.collection('user').document(message.sender_id)
+            #user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
+            #user_doc_B = db.collection('user').document(message.receiver_id)
+            #user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
     except WebSocketDisconnect:
         await manager.disconnect(client_id)
 
