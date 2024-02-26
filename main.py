@@ -847,7 +847,7 @@ async def get_messages(chat_id: str):
 
 # 게시글 자동 종료
 def check_end_date():
-    docs = db.collection('test').get() # 모든 post 가져옴
+    docs = db.collection('post').get() # 모든 post 가져옴
 
     for doc in docs:
         post = doc.to_dict()
@@ -857,7 +857,7 @@ def check_end_date():
 
         # end_date가 현재 시간을 초과한 경우, status를 변경합니다.
         if end_date < now and status == "게시":
-            db.collection('test').document(doc.id).update({
+            db.collection('post').document(doc.id).update({
                 'status': '종료'
             })
 
