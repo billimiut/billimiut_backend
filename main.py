@@ -502,7 +502,7 @@ async def add_post(
     map_latitude: float = Form(0),
     map_longitude: float = Form(0),
     dong: str = Form(""),
-    images: List[UploadFile] = File(None),
+    images: List[UploadFile] = File([]),
 ):
     doc_ref = db.collection('post').document()
 
@@ -510,7 +510,7 @@ async def add_post(
     # upload images to firebase storage
     urls = []
     blobs = []
-    if images is not None:
+    if images is not []:
         for image in images:
             if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
                 raise HTTPException(status_code=400, detail="Invalid file type.")
@@ -525,7 +525,18 @@ async def add_post(
             
             print(f"Image {fileName} uploaded successfully.")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
+
+    if start_date.tzinfo is None:
+        print("start_date는 시간대가 없습니다.")
+    else:
+        print(f"start_date의 시간대는 {start_date.tzinfo}입니다.")
+
+    if now.tzinfo is None:
+        print("now는 시간대가 없습니다.")
+    else:
+        print(f"now의 시간대는 {now.tzinfo}입니다.")
+
     emergency = True if start_date - now <= timedelta(minutes=30) else False
     post_id = doc_ref.id
 
@@ -597,7 +608,7 @@ async def edit_post(
     map_latitude: float = Form(0),
     map_longitude: float = Form(0),
     dong: str = Form(""),
-    images: List[UploadFile] = File(None),
+    images: List[UploadFile] = File([]),
 ):
     doc_ref = db.collection('post').document(post_id)
     
@@ -607,7 +618,7 @@ async def edit_post(
     urls = []
     blobs = []
     try:
-        if images is not None:
+        if images is not []:
             for image in images:
                 if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
                     raise HTTPException(status_code=400, detail="Invalid file type.")
