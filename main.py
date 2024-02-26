@@ -124,7 +124,12 @@ class ConnectionManager:
     async def send_personal_message(self, message: str, time: str, receiver_id: str):
         websocket = self.active_connections.get(receiver_id)
         if websocket:
-            await websocket.send_text(f"Message: {message}, Time: {time}")
+            if websocket:
+                data = {
+                    "message": message,
+                    "time": time,
+                }
+                await websocket.send_text(json.dumps(data))
 
 manager = ConnectionManager()
 
