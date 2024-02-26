@@ -16,51 +16,6 @@ default_app = initialize_app(cred, {
 db = firestore.client()
 
 
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Websocket Demo</title>
-           <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-
-    </head>
-    <body>
-    <div class="container mt-3">
-        <h1>FastAPI WebSocket Chat</h1>
-        <h2>Your ID: <span id="ws-id"></span></h2>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" class="form-control" id="messageText" autocomplete="off"/>
-            <button class="btn btn-outline-primary mt-2">Send</button>
-        </form>
-        <ul id='messages' class="mt-5">
-        </ul>
-        
-    </div>
-    
-        <script>
-            var client_id = "JWguSs0WqJcdFWtwzrvYVJdSN8k2"
-            document.querySelector("#ws-id").textContent = client_id;
-            var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
-            }
-        </script>
-    </body>
-</html>
-"""
-
-
 class GeoPoint(BaseModel):
     latitude: float = 0.0
     longitude: float = 0.0
@@ -143,19 +98,6 @@ class ConnectionManager:
         await websocket.accept() # 웹소켓 연결 수락
         self.active_connections[client_id] = websocket # 클라이언트-웹소켓 새로운 연결 추가
 
-    async def receive_message(self, client_id: str):
-        try:
-            websocket = self.active_connections[client_id]
-            while True:
-                data = await websocket.receive_text()
-                for client, ws in self.active_connections.items():  # 메시지를 모든 클라이언트에게 전달
-                    if client != client_id:  # 자신을 제외
-                        await ws.send_text(f"{client_id}: {data}")
-        except WebSocketDisconnect:  # 연결이 끊어진 경우
-            self.active_connections.pop(client_id)
-            for client, ws in self.active_connections.items():
-                await ws.send_text(f"{client_id} has left the chat.")  # 다른 클라이언트에게 연결 종료 알림
-
     # 클라이언트의 연결 종료
     async def disconnect(self, client_id: str):
         websocket = self.active_connections.get(client_id)
@@ -168,13 +110,6 @@ class ConnectionManager:
         if websocket:
             print(message)
             await websocket.send_text(message)
-        '''else:
-            # 새로운 WebSocket 객체 생성
-            new_websocket = WebSocket(...)
-            # 연결 관리자의 connect 메서드 호출
-            await self.connect(new_websocket, receiver_id)
-            # 메시지 전송
-            await new_websocket.send_text(message)'''
 
 manager = ConnectionManager()
 
@@ -186,11 +121,6 @@ class Message(BaseModel):
     time: str = datetime.now().isoformat()
 
 app = FastAPI()
-
-# websocket test를 위한 code
-@app.get("/")
-async def get():
-    return HTMLResponse(html)
 
 #ok
 @app.post("/login")
@@ -617,7 +547,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"Message content: {message.dict()}")
             #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
-            await manager.send_personal_message(f"Message text was: {message.message}", client_id)
+            await manager.send_personal_message(f"Message text was: {message.message}", message.receiver_id)
 
             # Update the chat_list field in each user's document
             # user_doc_A = db.collection('user').document(message.sender_id)
