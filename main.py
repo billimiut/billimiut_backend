@@ -1,10 +1,10 @@
-import os, json, pytz, asyncio
-from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect
+import os, json, pytz, asyncio, io, base64
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form
 from fastapi.responses import HTMLResponse # websocket test를 위한 code
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from geopy.distance import geodesic
 
@@ -31,16 +31,34 @@ class Post(BaseModel):
     money: int
     borrow: bool
     description: str
-    emergency: bool
+    emergency: Optional[bool] = None
     start_date: datetime
     end_date: datetime
-    post_time: datetime
+    post_time: Optional[datetime] = None
     female: bool
     status: str = "게시"
     borrower_user_id: Optional[str] = None
     lender_user_id: Optional[str] = None
     nickname: str
     profile: str = ""
+    address: str = ""
+    detail_address: str = ""
+    name: str = ""
+    map: GeoPoint = GeoPoint()
+    dong: str = ""
+
+class Edit_Post(BaseModel):
+    post_id: str = ""
+    title: str
+    item: str
+    category: str # 변경
+    image_url: List[str] =[]
+    money: int
+    borrow: bool
+    description: str
+    start_date: datetime
+    end_date: datetime
+    female: bool
     address: str = ""
     detail_address: str = ""
     name: str = ""
@@ -256,10 +274,60 @@ async def set_locations(location_data: User_Location = Body(...)):
 #ok
 @app.post("/my_info")
 async def my_info(user: Login_Token = Body(...)):
-    doc_ref = db.collection('user').document(user.login_token)
+    user_id = user.login_token
+    doc_ref = db.collection('user').document(user_id)
     doc = doc_ref.get()
     if doc.exists:
-        return doc.to_dict()  
+        my_info = doc.to_dict()
+        borrow_list = my_info['borrow_list']
+        lend_list = my_info['lend_list']
+        chat_list = my_info['chat_list']
+
+        result_borrow_list = []
+        result_lend_list = []
+        result_chat_list = []
+
+        # borrow_list, lend_list 실제 post 정보로 채우기
+        if borrow_list is not None:
+            for post_id in borrow_list:
+                post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
+                result_borrow_list.append(post)
+
+        if lend_list is not None:
+            for post_id in lend_list:
+                post = db.collection('post').document(post_id).get().to_dict() # post_id에 해당하는 post 가져옴
+                result_lend_list.append(post)
+
+        # chat_list에 neighbor_id, post_id, neighbor_nickname, neighbor_profile, last_message, last_message_time
+        if chat_list is not None:
+            for chat in chat_list:
+                neighbor_chat_info = {}
+
+                neighbor_id, post_id = chat.split("-")
+                neighbor_chat_info['neighbor_id'] = neighbor_id
+                neighbor_chat_info['post_id'] = post_id
+
+                chatting_room = sorted([user_id, neighbor_id])
+                chatting_room = ''.join(chatting_room)
+                
+                # neighbor 정보 저장
+                neighbor = db.collection('user').document(neighbor_id).get().to_dict() # user table
+                neighbor_chat_info['neighbor_nickname'] = neighbor['nickname']
+                neighbor_chat_info['neighbor_profile'] = neighbor['image_url']
+
+                # chatting 정보 저장
+                collection_ref = db.collection('chats').document(chatting_room).collection('messages')
+                last_doc = next(collection_ref.order_by('time', direction=firestore.Query.DESCENDING).limit(1).stream()).to_dict()
+                neighbor_chat_info['last_message'] = last_doc['message']
+                neighbor_chat_info['last_message_time'] = last_doc['time']
+                result_chat_list.append(neighbor_chat_info)
+
+        #chat_list
+        my_info['borrow_list'] = result_borrow_list
+        my_info['lend_list'] = result_lend_list
+        my_info['chat_list'] = result_chat_list
+
+        return my_info
     else:
         raise HTTPException(status_code=404, detail="User not found in Firestore")
 
@@ -419,30 +487,173 @@ async def get_location(location_id: str):
 
 
 @app.post("/add_post")
-async def add_post(user_id: str, post: Post):
+async def add_post(
+    user_id: str = Form(...),
+    title: str = Form(...),
+    item: str = Form(...),
+    category: str = Form(...),
+    money: int = Form(...),
+    borrow: bool = Form(...),
+    description: str = Form(...),
+    start_date: datetime = Form(...),
+    end_date: datetime = Form(...),
+    female: bool = Form(...),
+    address: str = Form(""),
+    detail_address: str = Form(""),
+    name: str = Form(""),
+    map_latitude: float = Form(0),
+    map_longitude: float = Form(0),
+    dong: str = Form(""),
+    images: List[UploadFile] = File(None),
+):
     doc_ref = db.collection('post').document()
 
-    try:
-        post_dict = post.dict()
-        post_dict["writer_id"] = user_id
-        post_id = doc_ref.id
-        post_dict["post_id"] = post_id
-        korea = pytz.timezone('Asia/Seoul')
-        now = datetime.now(korea)
-        post_dict["post_time"] = now
+    print(type(images))
+    # upload images to firebase storage
+    urls = []
+    blobs = []
+    if images is not None:
+        for image in images:
+            if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+                raise HTTPException(status_code=400, detail="Invalid file type.")
+            
+            fileName = f'{datetime.now().timestamp()}.jpg'
+            blob = storage.bucket().blob(f'post_images/{fileName}')
+            blob.upload_from_file(image.file, content_type=image.content_type)
 
+            url = blob.generate_signed_url(timedelta(days=365))
+            urls.append(url)
+            blobs.append(blob)
+            
+            print(f"Image {fileName} uploaded successfully.")
+
+    now = datetime.now(timezone.utc)
+    emergency = True if start_date - now <= timedelta(minutes=30) else False
+    post_id = doc_ref.id
+
+    try:
         user_ref = db.collection('user').document(user_id)
         user = user_ref.get().to_dict() # user table
-        post_dict['nickname'] = user['nickname']
-        post_dict['profile'] = user['image_url']
-        user_ref.update({'posts': firestore.ArrayUnion([post_id])})
+        if user is None:
+            raise ValueError("User does not exist.")
 
+        # Create the post dictionary manually
+        post_dict = {
+            "post_id": post_id,
+            "writer_id": user_id,
+            "title": title,
+            "item": item,
+            "category": category,
+            "money": money,
+            "borrow": borrow,
+            "description": description,
+            "emergency": emergency,
+            "start_date": start_date,
+            "end_date": end_date,
+            "post_time": now,
+            "female": female,
+            "status": "게시",
+            "borrower_user_id": "",
+            "lender_user_id": "",
+            "nickname": user['nickname'],
+            "profile": user['image_url'],
+            "address": address,
+            "detail_address": detail_address,
+            "name": name,
+            "map": {"latitude": map_latitude, "longitude": map_longitude},
+            "dong": dong,
+            "image_url": urls,
+        }
+
+        user_ref.update({'posts': firestore.ArrayUnion([post_id])})
         doc_ref.set(post_dict)
 
+    except ValueError as ve:
+        for blob in blobs:
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=400, detail="An error occurred while adding the Post.")
+        for blob in blobs:
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
+        raise HTTPException(status_code=500, detail=f"An error occurred while adding the Post: {str(e)}")
     return post_dict
 
+
+@app.put("/edit_post")
+async def edit_post(
+    post_id: str = Form(...),
+    title: str = Form(...),
+    item: str = Form(...),
+    category: str = Form(...),
+    money: int = Form(...),
+    borrow: bool = Form(...),
+    description: str = Form(...),
+    start_date: datetime = Form(...),
+    end_date: datetime = Form(...),
+    female: bool = Form(...),
+    address: str = Form(""),
+    detail_address: str = Form(""),
+    name: str = Form(""),
+    map_latitude: float = Form(0),
+    map_longitude: float = Form(0),
+    dong: str = Form(""),
+    images: List[UploadFile] = File(None),
+):
+    doc_ref = db.collection('post').document(post_id)
+    
+    if not doc_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Post does not exist")
+    
+    urls = []
+    blobs = []
+    try:
+        if images is not None:
+            for image in images:
+                if image.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
+                    raise HTTPException(status_code=400, detail="Invalid file type.")
+                
+                fileName = f'{datetime.now().timestamp()}.jpg'
+                blob = storage.bucket().blob(f'post_images/{fileName}')
+                blob.upload_from_file(image.file, content_type=image.content_type)
+
+                url = blob.generate_signed_url(timedelta(days=365))
+                urls.append(url)
+                blobs.append(blob)
+                
+                print(f"Image {fileName} uploaded successfully.")
+        
+        now = datetime.now(timezone.utc)
+        emergency = True if start_date - now <= timedelta(minutes=30) else False
+        
+        doc_ref.update({
+            "title": title,
+            "item": item,
+            "category": category,
+            "money": money,
+            "borrow": borrow,
+            "description": description,
+            "emergency": emergency,
+            "start_date": start_date,
+            "end_date": end_date,
+            "female": female,
+            "address": address,
+            "detail_address": detail_address,
+            "name": name,
+            "map": {"latitude": map_latitude, "longitude": map_longitude},
+            "dong": dong,
+            "image_url": urls,
+        })
+        
+        return doc_ref.get().to_dict()
+    
+    except Exception as e:
+        for blob in blobs:
+            blob.delete()
+            print(f"Image {fileName} deleted successfully.")
+        raise HTTPException(status_code=500, detail="An error occurred while updating the post")
+    
 
 @app.post("/upload_image")
 async def upload_image(images: List[UploadFile] = File(...)):
@@ -566,7 +777,7 @@ async def get_messages(chat_id: str):
 
 # 게시글 자동 종료
 def check_end_date():
-    docs = db.collection('test').get() # 모든 post 가져옴
+    docs = db.collection('post').get() # 모든 post 가져옴
 
     for doc in docs:
         post = doc.to_dict()
@@ -576,7 +787,7 @@ def check_end_date():
 
         # end_date가 현재 시간을 초과한 경우, status를 변경합니다.
         if end_date < now and status == "게시":
-            db.collection('test').document(doc.id).update({
+            db.collection('post').document(doc.id).update({
                 'status': '종료'
             })
 
