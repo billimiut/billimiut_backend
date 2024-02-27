@@ -623,14 +623,28 @@ async def edit_post(
     map_latitude: float = Form(0),
     map_longitude: float = Form(0),
     dong: str = Form(""),
+    deleted_images: List[str] = Form([]),
     images: List[UploadFile] = File([]),
 ):
+    print(images)
+    print(type(images))
+
     doc_ref = db.collection('post').document(post_id)
     
     if not doc_ref.get().exists:
         raise HTTPException(status_code=404, detail="Post does not exist")
     
-    urls = []
+    image_url = doc_ref.get().to_dict()["image_url"]
+    print("원래 image_url")
+    print(image_url)
+    
+    # 이미지 삭제
+    for i in image_url:
+        if i in deleted_images:
+            image_url.remove(i)
+    
+    print("삭제 후 image_url")
+    print(image_url)
     blobs = []
     try:
         if images is not []:
@@ -643,11 +657,13 @@ async def edit_post(
                 blob.upload_from_file(image.file, content_type=image.content_type)
 
                 url = blob.generate_signed_url(timedelta(days=365))
-                urls.append(url)
+                image_url.append(url)
                 blobs.append(blob)
                 
                 print(f"Image {fileName} uploaded successfully.")
-        
+        print("추가 후 image_url")
+        print(image_url)
+
         now = datetime.now(timezone.utc)
         emergency = True if start_date - now <= timedelta(minutes=30) else False
         
@@ -667,7 +683,7 @@ async def edit_post(
             "name": name,
             "map": {"latitude": map_latitude, "longitude": map_longitude},
             "dong": dong,
-            "image_url": urls,
+            "image_url": image_url,
         })
         
         return doc_ref.get().to_dict()
