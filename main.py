@@ -229,15 +229,12 @@ async def signup(user: User = Body(...)):
         return {"message": "1"}
     return {"message": "User successfully created"}
 
+REST_API_KEY = ''
+REDIRECT_URI = ''
 
 @app.get("/oauth")
 def oauth():
-    return
-
-
-@app.get("/logout")
-def logout():
-    return
+    return #RedirectResponse(url=f'https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email,gender')
 
 
 #ok
