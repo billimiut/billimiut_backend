@@ -121,15 +121,16 @@ class ConnectionManager:
             await websocket.close()
             del self.active_connections[client_id]
 
-    async def send_personal_message(self, message: str, time: str, receiver_id: str):
+    async def send_personal_message(self, message: str, time: str, sender_id: str, receiver_id: str, post_id: str):
         websocket = self.active_connections.get(receiver_id)
         if websocket:
-            if websocket:
-                data = {
-                    "message": message,
-                    "time": time,
-                }
-                await websocket.send_text(json.dumps(data))
+            data = {
+                "message": message,
+                "time": time,
+                "sender_id": sender_id,
+                "post_id": post_id
+            }
+            await websocket.send_text(json.dumps(data))
 
 manager = ConnectionManager()
 
@@ -232,9 +233,9 @@ async def signup(user: User = Body(...)):
 REST_API_KEY = ''
 REDIRECT_URI = ''
 
-@app.get("/oauth")
+'''@app.get("/oauth")
 def oauth():
-    return #RedirectResponse(url=f'https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=account_email,gender')
+    return RedirectResponse(url=f'https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=profile_nickname,account_email')'''
 
 
 #ok
@@ -796,7 +797,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             print(f"Message content: {message.dict()}")
             #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
-            await manager.send_personal_message(message.message, message.time, message.receiver_id)
+            await manager.send_personal_message(message.message, message.time, message.sender_id, message.receiver_id, message.post_id)
 
             # Update the chat_list field in each user's document
             #user_doc_A = db.collection('user').document(message.sender_id)
