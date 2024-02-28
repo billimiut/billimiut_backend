@@ -1,11 +1,13 @@
 import os, json, pytz, asyncio, io, base64
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional, Any, Tuple, cast
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from geopy.distance import geodesic
+from config import Kakao_keys
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -230,12 +232,27 @@ async def signup(user: User = Body(...)):
         return {"message": "1"}
     return {"message": "User successfully created"}
 
-REST_API_KEY = ''
-REDIRECT_URI = ''
+
+@app.get("/kakao_login")
+def kakao_login():
+    kakao_oauth_url = f"https://kauth.kakao.com/oauth/authorize?client_id=${Kakao_keys.REST_API_KEY}&redirect_uri=${Kakao_keys.REDIRECT_URI}&response_type=code&scope=profile_nickname,account_email"
+    return RedirectResponse(kakao_oauth_url)
+
 
 '''@app.get("/oauth")
-def oauth():
-    return RedirectResponse(url=f'https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=profile_nickname,account_email')'''
+def oauth(code: str):
+    token_request = requests.get(
+        f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={Kakao_keys.REST_API_KEY}&redirect_uri={Kakao_keys.REDIRECT_URI}&code={code}"
+    )
+    token_json = token_request.json()
+    access_token = token_json.get("access_token")
+    
+    info_request = requests.get(
+        "https://kapi.kakao.com/v2/user/me", 
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    info_json = info_request.json()
+    print(info_json)'''
 
 
 #ok
