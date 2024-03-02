@@ -1,6 +1,5 @@
-import os, json, pytz, asyncio, io, base64
-from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form
-from fastapi.responses import RedirectResponse
+import os, json, pytz, asyncio, requests, io, base64
+from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form, Request
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
 from typing import List, Dict, Optional, Any, Tuple, cast
@@ -233,26 +232,22 @@ async def signup(user: User = Body(...)):
     return {"message": "User successfully created"}
 
 
-@app.get("/kakao_login")
-def kakao_login():
-    kakao_oauth_url = f"https://kauth.kakao.com/oauth/authorize?client_id=${Kakao_keys.REST_API_KEY}&redirect_uri=${Kakao_keys.REDIRECT_URI}&response_type=code&scope=profile_nickname,account_email"
-    return RedirectResponse(kakao_oauth_url)
-
-
-'''@app.get("/oauth")
-def oauth(code: str):
-    token_request = requests.get(
-        f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={Kakao_keys.REST_API_KEY}&redirect_uri={Kakao_keys.REDIRECT_URI}&code={code}"
-    )
-    token_json = token_request.json()
-    access_token = token_json.get("access_token")
-    
-    info_request = requests.get(
-        "https://kapi.kakao.com/v2/user/me", 
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
-    info_json = info_request.json()
-    print(info_json)'''
+@app.get("/oauth")
+def oauth(code: str = None):
+    print(f"Received code: {code}")
+    client_id = Kakao_keys.REST_API_KEY
+    redirect_uri = Kakao_keys.REDIRECT_URI
+    if code is None:
+        raise HTTPException(status_code=400, detail="No code provided")
+    payload = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "code": code,
+    }
+    res = requests.post("https://kauth.kakao.com/oauth/token", data=payload)
+    token = res.json().get("access_token")
+    return {"access_token": token}
 
 
 #ok
