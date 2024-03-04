@@ -1,4 +1,4 @@
-import os, json, pytz, asyncio, requests, io, base64
+import os, json, pytz, asyncio, requests, io, re
 from fastapi import FastAPI, HTTPException, File, UploadFile, Body, WebSocket, WebSocketDisconnect, Form, Request
 from pydantic import BaseModel
 from firebase_admin import credentials, storage, firestore, exceptions, initialize_app, auth
@@ -636,6 +636,9 @@ async def edit_post(
     deleted_images: List[str] = Form([]),
     images: List[UploadFile] = File([]),
 ):
+    deleted_images = deleted_images[0]
+    print("deleted_images")
+    print(deleted_images)
     print(images)
     print(type(images))
 
@@ -649,7 +652,8 @@ async def edit_post(
     print(image_url)
     
     # 이미지 삭제
-    for i in image_url:
+    image_url_copy = image_url.copy()
+    for i in image_url_copy:
         if i in deleted_images:
             image_url.remove(i)
     
