@@ -821,15 +821,15 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             message = Message(**data_json, time = datetime.now().isoformat())
             chat_id = ''.join(sorted([message.sender_id, message.receiver_id]))
             print(f"Message content: {message.dict()}")
-            #db.collection('chats').document(chat_id).collection('messages').add(message.dict())
+            db.collection('chats').document(chat_id).collection('messages').add(message.dict())
             # sender가 보낸 메시지를 서버가 받고, 서버가 이를 receiver에게 전달
             await manager.send_personal_message(message.message, message.time, message.sender_id, message.receiver_id, message.post_id)
 
             # Update the chat_list field in each user's document
-            #user_doc_A = db.collection('user').document(message.sender_id)
-            #user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
-            #user_doc_B = db.collection('user').document(message.receiver_id)
-            #user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
+            user_doc_A = db.collection('user').document(message.sender_id)
+            user_doc_A.set({"chat_list": firestore.ArrayUnion([f"{message.receiver_id}-{message.post_id}"])}, merge=True)
+            user_doc_B = db.collection('user').document(message.receiver_id)
+            user_doc_B.set({"chat_list": firestore.ArrayUnion([f"{message.sender_id}-{message.post_id}"])}, merge=True)
     except WebSocketDisconnect:
         await manager.disconnect(client_id)
 
