@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Any, Tuple, cast
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from geopy.distance import geodesic
-from config import Kakao_keys
+# from config import Kakao_keys
 
 #cred = credentials.Certificate("/mnt/c/Users/USER/billimiut/billimiut_backend/billimiut-firebase-adminsdk-cr23b-980ffebf27.json")
 cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), "billimiut-firebase-adminsdk-cr23b-980ffebf27.json"))
@@ -242,22 +242,22 @@ async def signup(user: User = Body(...)):
     return {"message": "User successfully created"}
 
 
-@app.get("/oauth")
-def oauth(code: str = None):
-    print(f"Received code: {code}")
-    client_id = Kakao_keys.REST_API_KEY
-    redirect_uri = Kakao_keys.REDIRECT_URI
-    if code is None:
-        raise HTTPException(status_code=400, detail="No code provided")
-    payload = {
-        "grant_type": "authorization_code",
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "code": code,
-    }
-    res = requests.post("https://kauth.kakao.com/oauth/token", data=payload)
-    token = res.json().get("access_token")
-    return {"access_token": token}
+# @app.get("/oauth")
+# def oauth(code: str = None):
+#     print(f"Received code: {code}")
+#     client_id = Kakao_keys.REST_API_KEY
+#     redirect_uri = Kakao_keys.REDIRECT_URI
+#     if code is None:
+#         raise HTTPException(status_code=400, detail="No code provided")
+#     payload = {
+#         "grant_type": "authorization_code",
+#         "client_id": client_id,
+#         "redirect_uri": redirect_uri,
+#         "code": code,
+#     }
+#     res = requests.post("https://kauth.kakao.com/oauth/token", data=payload)
+#     token = res.json().get("access_token")
+#     return {"access_token": token}
 
 
 #ok
@@ -404,7 +404,7 @@ async def get_my_posts(user_id: str):
                 posts = db.collection('post').where(field_path='post_id', op_string='in', value=chunk).stream()
                 for post in posts:
                     my_posts.append(post.to_dict())
-
+                
         return my_posts
 
 
