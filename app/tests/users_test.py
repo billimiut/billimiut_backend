@@ -1,0 +1,14 @@
+# #users/signup
+# {
+#     "id":"wooseok5538@gmail.com",
+#     "borrow_list":[],
+#     "chat_list":[],
+#     "profile_image":"",
+#     "keywords":[],
+#     "lend_list":[],
+#     "nickname":"wooseok",
+#     "posts":[],
+#     "pw":"wjddntjr",
+#     "salt":"salt",
+#     "login_type":"test"
+# }

@@ -12,3 +12,5 @@ asyncio_redis==0.16.0
 broadcaster[redis,postgres,kafka]
 SQLAlchemy==2.0.23
 dotenv==0.0.5
+pymongo==4.3.3
+python-dotenv==0.19.1

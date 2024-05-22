@@ -1,15 +1,15 @@
-from pydantic import BaseModel
+from typing import Optional, List
+from pydantic import BaseModel, Field
 
-class User(BaseModel):
-    id: str
-    pw: str
-    nickname: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": "test_id",
-                "pw": "test_pw",
-                "nickname": "test_nickname"
-            }
-        }
+class UserBase(BaseModel):
+    borrow_list: Optional[List[str]]
+    chat_list: Optional[List[str]]
+    id: Optional[str]
+    profile_image: Optional[str]
+    keywords: Optional[List[str]]
+    lend_list: Optional[List[str]]
+    nickname: Optional[str]
+    posts: Optional[List[str]]
+    pw: Optional[str]
+    salt: Optional[str]
+    login_type: Optional[str]

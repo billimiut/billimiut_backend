@@ -1,13 +1,21 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from app.config import settings
+from pymongo.mongo_client import MongoClient
+from bson.binary import UuidRepresentation
+from uuid import uuid4
+import certifi
 
-# SQLAlchemy engine 생성
-engine = create_engine(settings.DATABASE_URL)
+from dotenv import load_dotenv,find_dotenv
+import os
 
-# 세션 클래스 생성
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+load_dotenv(find_dotenv())
 
-# Base 클래스 생성
-Base = declarative_base()
+username = os.getenv('MONGO_USER')
+password = os.getenv('MONGO_PASS')
+host = os.getenv('MONGO_HOST')
+query_param = 'ssl=False'
+port = 27017
+ca = certifi.where()
+uri = f"mongodb://{username}:{password}@{host}/?{query_param}"
+
+dbname = 'billimiut'
+client = MongoClient(uri)[dbname]
+client.command('ping')
