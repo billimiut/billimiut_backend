@@ -13,3 +13,19 @@ class UserBase(BaseModel):
     pw: Optional[str]
     salt: Optional[str]
     login_type: Optional[str]
+
+class UserCreate(BaseModel):
+    id: str
+    pw: str
+    nickname: str
+
+class UserLogin(BaseModel):
+    id: str
+    pw: str
+
+class UserGetInfo(BaseModel):
+    id: str
+
+class UserUpdate(BaseModel):
+    id: str
+    nickname: str
