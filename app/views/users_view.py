@@ -23,3 +23,6 @@ async def get_my_info_route(user: UserGetInfo = Body(...)):
 @router.put("/users/my_info")
 async def put_my_info_route(user: UserUpdate = Body(...)):
     return await put_my_info(user)
+
+## deprecated ##
+## 나중에 이전 API들 연결해주는 그런걸로 사용할 수 있을 듯 ##

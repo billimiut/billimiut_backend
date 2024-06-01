@@ -4,8 +4,8 @@ from bson import ObjectId
 from ..db.session import client
 from ..schemas.users_schema import UserBase, UserCreate, UserLogin,UserGetInfo, UserUpdate
 
-collection = 'billimiut' # user로 수정해야함
-collection_temp = 'billimiut_temp'
+collection = 'user' # user로 수정해야하나?
+collection_temp = 'user_temp'
 
 def insert_user(user: UserCreate):
     try:
