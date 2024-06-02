@@ -30,7 +30,7 @@ async def get_post():
     except Exception:
         return HTTPException(status_code=400, detail="Get posts failed")
 
-@router.put("/post/status")
+@router.put("/post/status") ## 이거 굳이 borrower uuid랑 lender uuid를 받아올 필요가 없는거 같음. post_id만 받아오면 될듯
 async def put_post_status(post: PostUpdate):
     try:
         res = update_post_status(post)

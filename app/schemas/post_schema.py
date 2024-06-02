@@ -24,6 +24,6 @@ class PostBase(BaseModel):
     status: Optional[str]
 
 class PostUpdate(BaseModel):
-    post_uuid: str
+    post_id: str
     borrower_uuid: str
     lender_uuid: str
