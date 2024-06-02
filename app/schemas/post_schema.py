@@ -1,5 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
+
 
 class PostBase(BaseModel):
     address: Optional[str]
@@ -10,18 +11,16 @@ class PostBase(BaseModel):
     category: Optional[str]
     title: Optional[str]
     description: Optional[str]
-    emergency : Optional[bool]
-    start_date: Optional[str]
-    end_date: Optional[str]
+    emergency: Optional[bool]
+    start_date: Optional[str]  # 나중에 datetime으로 변경
+    end_date: Optional[str]  # 나중에 datetime으로 변경
     female: Optional[bool]
     image_url: Optional[str]
     item: Optional[str]
     lender_uuid: Optional[str]
-    map_coordinates: Optional[List[dict[str, float]]]
-    # map_coordinates: Optional[List[str:float]]
-    price: Optional[int]    
-    # post_uuid: Optional[str] # post_uuid를 _id로 대체 
-    post_time: Optional[str]
+    map_coordinates: Optional[List[Dict[str, float]]]
+    price: Optional[int]
+    post_time: Optional[str]  # 나중에 datetime으로 변경
     status: Optional[str]
 
 class PostUpdate(BaseModel):

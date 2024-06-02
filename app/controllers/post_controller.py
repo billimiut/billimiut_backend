@@ -1,6 +1,7 @@
-from fastapi import HTTPException, APIRouter, HTTPException, Body
+from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form
 from app.schemas.post_schema import PostBase, PostUpdate
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post
+import os,json
 
 router = APIRouter()
 
@@ -68,3 +69,21 @@ async def put_post_by_post_id(post_id: str, post: PostBase):
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Update post failed")
+    
+@router.post("/post/upload_image")
+async def upload_image(post:str=Form(...),file: UploadFile = File(...)):
+    try: # 이미지를 서버에 저장하는 코드. 나중에 S3로 변경해야 함
+        post_dict = json.loads(post)
+        post = PostBase(**post_dict)
+        post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
+        res = find_post(post_id)
+        if res:
+            current_dir = os.path.dirname(os.path.realpath(__file__)) 
+            UPLOAD_DIR = os.path.join(current_dir, "../images")
+            content = await file.read()
+            filename = f"{post_id}.png"
+            with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
+                f.write(content)
+            return {"filename": filename, "post_id": post_id, "status": "success"}
+    except Exception:
+        return HTTPException(status_code=400, detail="Upload image failed")
