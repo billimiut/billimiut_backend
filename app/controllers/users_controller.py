@@ -35,6 +35,11 @@ async def login(user: UserLogin):
         del res['salt']
         del res['type']
         del res['token']
+        res ["borrow_count"] = 0
+        res ["lend_count"] = 0
+        res ["borrow_money"] = 1000
+        res ["lend_money"] = 4000
+        res ["borrow_list"] = ["시계", "자전거"]
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception:
         return HTTPException(status_code=400, detail="Login failed")
@@ -115,6 +120,11 @@ async def get_my_info(req: Request):
     del res['salt']
     del res['type']
     del res['token']
+    res ["borrow_count"] = 0
+    res ["lend_count"] = 0
+    res ["borrow_money"] = 1000
+    res ["lend_money"] = 4000
+    res ["borrow_list"] = ["시계", "자전거"]
     print(res)
     return res
     
