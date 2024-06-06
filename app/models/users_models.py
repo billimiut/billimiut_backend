@@ -29,10 +29,10 @@ def find_user(user: UserLogin):
             response["_id"] = str(response["_id"])
             return response
         else:
-            return {"error": "User not found"}
+            return None, {"error": "User not found"}
     except Exception as e:
         print(e)
-        return {"error": "Find failed"}
+        return None, {"error": "Find failed"}
     
 def find_user_by_id(user:UserGetInfo):
     try:
@@ -42,7 +42,31 @@ def find_user_by_id(user:UserGetInfo):
             response["_id"] = str(response["_id"])
             return response
         else:
+            return None, {"error": "User not found"}
+    except Exception as e:
+        print(e)
+        return None, {"error": "Find failed"}
+    
+def find_user_by_uuid (uuid: str):
+    try:
+        response = client[collection].find_one({"uuid": uuid})
+        if response:
+            return response
+        else:
             return {"error": "User not found"}
+    except Exception as e:
+        print(e)
+        return {"error": "Find failed"}
+    
+def signup_check(user: UserCreate):
+    type = user.type
+    id = user.id
+    try:
+        response = client[collection].find_one({"id": id, "type": type})
+        if response:
+            return {"message": "User already exists"}
+        else:
+            return {"message": "User not found"}
     except Exception as e:
         print(e)
         return {"error": "Find failed"}
