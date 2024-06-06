@@ -2,7 +2,7 @@ from datetime import timedelta, timezone, datetime
 from bson import ObjectId
 
 from ..db.session import client
-from ..schemas.users_schema import UserBase, UserCreate, UserLogin,UserGetInfo, UserUpdate
+from ..schemas.users_schema import UserBase, UserCreate, UserCreateService, UserLogin,UserGetInfo, UserUpdate
 
 collection = 'user' # user로 수정해야하나?
 collection_temp = 'user_temp'
@@ -27,7 +27,7 @@ def find_user(user: UserLogin):
         response = client[collection].find_one(user)
         if response:
             response["_id"] = str(response["_id"])
-            return response
+            return response, {"message": "Success"}
         else:
             return None, {"error": "User not found"}
     except Exception as e:
@@ -58,7 +58,7 @@ def find_user_by_uuid (uuid: str):
         print(e)
         return {"error": "Find failed"}
     
-def signup_check(user: UserCreate):
+def signup_check(user: UserCreateService):
     type = user.type
     id = user.id
     try:

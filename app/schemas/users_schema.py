@@ -19,6 +19,13 @@ class UserCreate(BaseModel):
     pw: str
     nickname: str
     female: bool
+    type: str
+
+class UserCreateService(BaseModel):
+    id: str
+    pw: str
+    nickname: str
+    female: bool
     
 class UserCreateOauth(BaseModel):
     id: str
