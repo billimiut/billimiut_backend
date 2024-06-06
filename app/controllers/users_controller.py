@@ -31,7 +31,7 @@ async def login(user: UserLogin):
         # 예외처리 부분이 이상해서 일단 제거함
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
-        return {"access_token": access_token, "refresh_token": refresh_token}
+        return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception:
         return HTTPException(status_code=400, detail="Login failed")
 
@@ -107,6 +107,10 @@ async def get_my_info(req: Request):
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
     res = find_user_by_id(UserGetInfo(id=id))
+    del res['pw']
+    del res['salt']
+    del res['type']
+    del res['token']
     print(res)
     return res
     
