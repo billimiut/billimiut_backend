@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 from fastapi import HTTPException, APIRouter, HTTPException, Body, Request
 from fastapi.responses import RedirectResponse
 import httpx
-from app.schemas.users_schema import UserCreate,UserLogin,UserGetInfo,UserUpdate, UserCreateOauth
+from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin,UserGetInfo,UserUpdate, UserCreateOauth
 from app.models.users_models import insert_user,find_user,find_user_by_id,update_user, signup_check
 
 from app.utils.jwt_util import jwt_decoder, jwt_encoder
@@ -14,16 +14,13 @@ from app.utils.jwt_util import jwt_decoder, jwt_encoder
 router = APIRouter()
 
 @router.post("/users/signup")
-async def sign_up(user: UserCreate):
+async def sign_up(user: UserCreateService):
+    user = user.model_dump()
+    user['type'] = "service"
+    user = UserCreate(**user)
     try:
-        # 중복여부 확인 필요
-        check = signup_check(user)['message']
-        print(check)
-        if check == "User not found":
-            res = insert_user(user)
-            return res
-        else :
-            return HTTPException(status_code=400, detail=check)
+        res = insert_user(user)
+        return res
     except Exception:
         return HTTPException(status_code=400, detail="Signup failed")
 
@@ -31,10 +28,10 @@ async def sign_up(user: UserCreate):
 async def login(user: UserLogin):
     try:
         res, message = find_user(user)
-        if res == None:
-            return HTTPException(status_code=400, detail=message)
-        print(res)
-        return res
+        # 예외처리 부분이 이상해서 일단 제거함
+        message_access, access_token = jwt_encoder("access_token", res)
+        message_refresh, refresh_token = jwt_encoder("refresh_token", res)
+        return {"access_token": access_token, "refresh_token": refresh_token}
     except Exception:
         return HTTPException(status_code=400, detail="Login failed")
 
@@ -49,8 +46,6 @@ def kakaologin():
         "response_type": "code"
     }
     params = urlencode(config)
-    print(params)
-
     return RedirectResponse(url=f"https://kauth.kakao.com/oauth/authorize?{params}")
     
 @router.get('/login/kakao/callback')
@@ -95,21 +90,25 @@ async def kakaocallback(request: Request):
             female = True
         else:
             female = False
-        user= UserCreateOauth(id=email, nickname=nickname, female=female)
-        user = user.model_dump()
-        message_access, access_token = jwt_encoder("access_token", user)
-        message_refresh, refresh_token = jwt_encoder("refresh_token", user)
-        return {"access_token": access_token, "refresh_token": refresh_token}
-
-
+        user= UserCreate(id=email, nickname=nickname, female=female, type='kakao')
+        # 이미 유저 존재하는지 확인하는 과정 필요
+        try:
+            res = insert_user(user)
+            user = user.model_dump()
+            message_access, access_token = jwt_encoder("access_token", user)
+            message_refresh, refresh_token = jwt_encoder("refresh_token", user)
+            return {"access_token": access_token, "refresh_token": refresh_token}
+        except Exception:
+            return HTTPException(status_code=400, detail="Signup failed")
 
 @router.get("/users/my_info")
-async def get_my_info(user: UserGetInfo):
-    try:
-        res = find_user_by_id(user)
-        return res
-    except Exception:
-        return HTTPException(status_code=400, detail="Get my info failed")
+async def get_my_info(req: Request):
+    token = req.headers.get('Bearer')
+    message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
+    id = information['data']['_id']
+    res = find_user_by_id(UserGetInfo(id=id))
+    print(res)
+    return res
     
 @router.put("/users/my_info")
 async def put_my_info(user: UserUpdate):

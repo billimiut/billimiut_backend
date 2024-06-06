@@ -1,5 +1,5 @@
 from datetime import timedelta, timezone, datetime
-from bson import ObjectId
+from bson.objectid import ObjectId
 
 from ..db.session import client
 from ..schemas.users_schema import UserBase, UserCreate, UserCreateService, UserLogin,UserGetInfo, UserUpdate
@@ -26,6 +26,7 @@ def find_user(user: UserLogin):
         user = user.model_dump()
         response = client[collection].find_one(user)
         if response:
+            print(type(response["_id"]))
             response["_id"] = str(response["_id"])
             return response, {"message": "Success"}
         else:
@@ -37,7 +38,8 @@ def find_user(user: UserLogin):
 def find_user_by_id(user:UserGetInfo):
     try:
         user = user.model_dump()
-        response = client[collection].find_one(user)
+        print(user['id'])
+        response = client[collection].find_one({'_id': ObjectId(user['id'])})
         if response:
             response["_id"] = str(response["_id"])
             return response
