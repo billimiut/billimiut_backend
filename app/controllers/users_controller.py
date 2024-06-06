@@ -31,6 +31,10 @@ async def login(user: UserLogin):
         # 예외처리 부분이 이상해서 일단 제거함
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
+        del res['pw']
+        del res['salt']
+        del res['type']
+        del res['token']
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception:
         return HTTPException(status_code=400, detail="Login failed")
