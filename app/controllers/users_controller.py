@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 from fastapi import HTTPException, APIRouter, HTTPException, Body, Request
 from fastapi.responses import RedirectResponse
 import httpx
+from app.models.post_models import find_post
 from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin,UserGetInfo,UserUpdate, UserCreateOauth
 from app.models.users_models import insert_user,find_user,find_user_by_id,update_user, signup_check
 
@@ -35,6 +36,24 @@ async def login(user: UserLogin):
         del res['salt']
         del res['type']
         del res['token']
+
+        # 포스팅 목록 불러오기
+        borrow_list_id = res['borrow_list']
+        lend_list_id = res['lend_list']
+
+        borrow_list=[]
+        lend_list=[]
+
+        for item_id in borrow_list_id:
+            item_info = find_post(item_id)
+            borrow_list.append(item_info)
+        for item_id in lend_list_id:
+            item_info = find_post(item_id)
+            lend_list.append(item_info)
+
+        res['borrow_list'] = borrow_list
+        res['lend_list'] = lend_list
+
         res ["borrow_count"] = 0
         res ["lend_count"] = 0
         res ["borrow_money"] = 1000
@@ -114,13 +133,35 @@ async def kakaocallback(request: Request):
 async def get_my_info(req: Request):
     auth_header= req.headers.get('Authorization')
     token = auth_header.split(' ')[1]
+    print(token)
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
     res = find_user_by_id(UserGetInfo(id=id))
+
+    # 필요 없는 정보 제거
     del res['pw']
     del res['salt']
     del res['type']
     del res['token']
+
+    # 포스팅 목록 불러오기
+    borrow_list_id = res['borrow_list']
+    lend_list_id = res['lend_list']
+
+    borrow_list=[]
+    lend_list=[]
+
+    for item_id in borrow_list_id:
+        item_info = find_post(item_id)
+        borrow_list.append(item_info)
+    for item_id in lend_list_id:
+        item_info = find_post(item_id)
+        lend_list.append(item_info)
+
+    res['borrow_list'] = borrow_list
+    res['lend_list'] = lend_list
+
+    # dummy data
     res ["borrow_count"] = 0
     res ["lend_count"] = 0
     res ["borrow_money"] = 1000

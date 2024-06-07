@@ -21,6 +21,10 @@ def find_post(post_id: str):
         response = client[collection].find_one({"_id": ObjectId(post_id)})
         if response:
             response['_id'] = str(response['_id'])
+            print(response)
+            response['start_date'] = str(response['start_date'])
+            response['end_date'] = str(response['end_date'])
+            response['post_time'] = str(response['post_time'])
             return response
         else:
             return {"error": "Post not found"}
