@@ -112,7 +112,8 @@ async def kakaocallback(request: Request):
 
 @router.get("/users/my_info")
 async def get_my_info(req: Request):
-    token = req.headers.get('Bearer')
+    auth_header= req.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
     res = find_user_by_id(UserGetInfo(id=id))
