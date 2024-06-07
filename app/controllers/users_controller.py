@@ -68,6 +68,32 @@ async def login(user: UserLogin):
             item_info = find_post(lend_item_id)
             lend_list.append(item_info)
 
+        for post in borrow_list:
+            if(post['borrow'] == True):
+                    writer_id = post['borrower_uuid']
+            else:
+                writer_id = post['lender_uuid']
+            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
+            post['writer_id'] = writer_id
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
+    
+        for post in lend_list:
+            if(post['borrow'] == True):
+                    writer_id = post['borrower_uuid']
+            else:
+                writer_id = post['lender_uuid']
+            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
+            post['writer_id'] = writer_id
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
+
         res['borrow_list'] = borrow_list
         res['lend_list'] = lend_list
         print(borrow_list)
@@ -175,6 +201,32 @@ async def get_my_info(req: Request):
     for item_id in lend_list_id:
         item_info = find_post(item_id)
         lend_list.append(item_info)
+
+    for post in borrow_list:
+        if(post['borrow'] == True):
+                writer_id = post['borrower_uuid']
+        else:
+            writer_id = post['lender_uuid']
+        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        post['nickname'] = writer_info['nickname']
+        post['profile_image'] = writer_info['profile_image']
+        post['writer_id'] = writer_id
+        post_id = post['_id']
+        del post['_id']
+        post['post_id'] = post_id
+    
+    for post in lend_list:
+        if(post['borrow'] == True):
+                writer_id = post['borrower_uuid']
+        else:
+            writer_id = post['lender_uuid']
+        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        post['nickname'] = writer_info['nickname']
+        post['profile_image'] = writer_info['profile_image']
+        post['writer_id'] = writer_id
+        post_id = post['_id']
+        del post['_id']
+        post['post_id'] = post_id
 
     res['borrow_list'] = borrow_list
     res['lend_list'] = lend_list
