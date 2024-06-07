@@ -75,9 +75,9 @@ def find_posts_by_user(user_id: str): # 'input' is not a valid ObjectId, it must
                 {"lender_uuid": user_id, "borrow": False}
             ]
         })
-        print(response)
+
         if response:
-            return response
+            return list(response)
         else:
             return {"error": "Posts not found"}
     except Exception as e:
@@ -86,8 +86,15 @@ def find_posts_by_user(user_id: str): # 'input' is not a valid ObjectId, it must
     
 def find_posts_by_user_and_status(user_id: str, status: str):
     try:
-        response = client[collection].find({"_id": user_id, "status": status}) # 이것도 결국 비슷한거라 나중에 해결하기.
+        response = client[collection].find({
+            "$or": [
+                {"borrower_uuid": user_id, "borrow": True}, 
+                {"lender_uuid": user_id, "borrow": False}
+            ]
+            , "status": status
+        }) # 이것도 결국 비슷한거라 나중에 해결하기.
         if response:
+            print(response)
             return response
         else:
             return {"error": "Posts not found"}

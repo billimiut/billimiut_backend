@@ -38,7 +38,6 @@ def find_user(user: UserLogin):
 def find_user_by_id(user:UserGetInfo):
     try:
         user = user.model_dump()
-        print(user['id'])
         response = client[collection].find_one({'_id': ObjectId(user['id'])})
         if response:
             response["_id"] = str(response["_id"])
