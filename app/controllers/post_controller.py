@@ -1,7 +1,10 @@
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form
+from app.models.users_models import find_user_by_id
 from app.schemas.post_schema import PostBase, PostUpdate
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post
 import os,json
+
+from app.schemas.users_schema import UserGetInfo
 
 router = APIRouter()
 
@@ -18,6 +21,13 @@ async def create_post(post: PostBase):
 async def get_post(post_id: str):
     try:
         res = find_post(post_id)
+        if(res['borrow'] == True):
+            writer_id = res['borrower_uuid']
+        else:
+            writer_id = res['lender_uuid']
+        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        res['nickname'] = writer_info['nickname']
+        res['profile_image'] = writer_info['profile_image']
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get post failed")
@@ -26,6 +36,14 @@ async def get_post(post_id: str):
 async def get_post():
     try:
         res = find_posts()
+        for post in res:
+            if(post['borrow'] == True):
+                writer_id = post['borrower_uuid']
+            else:
+                writer_id = post['lender_uuid']
+            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get posts failed")
