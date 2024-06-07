@@ -29,6 +29,7 @@ async def get_post(post_id: str):
         writer_info = find_user_by_id(UserGetInfo(id=writer_id))
         res['nickname'] = writer_info['nickname']
         res['profile_image'] = writer_info['profile_image']
+        res['writer_id'] = writer_id
         post_id = res['_id']
         del res['_id']
         res['post_id'] = post_id
@@ -48,6 +49,7 @@ async def get_post():
             writer_info = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
+            post['writer_id'] = writer_id
             post_id = post['_id']
             del post['_id']
             post['post_id'] = post_id
@@ -80,6 +82,8 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
             post['_id'] = str(post['_id'])
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
+            print(user_id)
+            post['writer_id'] = user_id
             post_id = post['_id']
             del post['_id']
             post['post_id'] = post_id
