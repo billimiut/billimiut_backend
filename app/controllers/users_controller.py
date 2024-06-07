@@ -28,7 +28,6 @@ def temp_dummy_data(res: dict):
     res["lend_count"] = 0
     res["borrow_money"] = 1000
     res["lend_money"] = 4000
-    res["borrow_list"] = ["시계", "자전거"]
 
 
 @router.post("/users/signup")
@@ -51,9 +50,6 @@ async def login(user: UserLogin):
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
 
-        print(access_token)
-        print(refresh_token)
-
         # 민감한 데이터 삭제
         delete_sensitive_data(res)
 
@@ -64,15 +60,17 @@ async def login(user: UserLogin):
         borrow_list = []
         lend_list = []
 
-        for item_id in borrow_list_id:
-            item_info = find_post(item_id)
+        for borrow_item_id in borrow_list_id:
+            item_info = find_post(borrow_item_id)
             borrow_list.append(item_info)
-        for item_id in lend_list_id:
-            item_info = find_post(item_id)
+
+        for lend_item_id in lend_list_id:
+            item_info = find_post(lend_item_id)
             lend_list.append(item_info)
 
         res['borrow_list'] = borrow_list
         res['lend_list'] = lend_list
+        print(borrow_list)
 
         # dummy data 넣기
         temp_dummy_data(res)
@@ -154,7 +152,6 @@ async def kakaocallback(request: Request):
 async def get_my_info(req: Request):
     auth_header = req.headers.get('Authorization')
     token = auth_header.split(' ')[1]
-    print(token)
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
     res = find_user_by_id(UserGetInfo(id=id))
