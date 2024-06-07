@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form
 from app.models.users_models import find_user_by_id
 from app.schemas.post_schema import PostBase, PostUpdate
@@ -64,21 +65,33 @@ async def delete_post(post_id: str):
     except Exception:
         return HTTPException(status_code=400, detail="Delete post failed")
 
-@router.get("/post/{user_id}")
-async def get_posts_by_user(user_id: str):
+@router.get("/post/personal/{user_id}")
+async def get_posts_by_user(user_id: str, status: Optional[str] = None):
     try:
+        writer_info = find_user_by_id(UserGetInfo(id=user_id))
         res = find_posts_by_user(user_id)
+        for post in res:
+            post['_id'] = str(post['_id'])
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
+
+        if status:
+            # 일단 서버 자체적으로 구현
+            for post in res:
+                if post['status'] != status:
+                    res.remove(post)
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get posts by user failed")
     
-@router.get("/post/{user_id}?status={status}")
-async def get_posts_by_user_and_status(user_id: str, status: str):
-    try:
-        res = find_posts_by_user_and_status(user_id, status)
-        return res
-    except Exception:
-        return HTTPException(status_code=400, detail="Get posts by user and status failed")
+# @router.get("/post/personal/{user_id}?status={status}")
+# async def get_posts_by_user_and_status(user_id: str, status: str):
+#     print(status)
+#     try:
+#         res = find_posts_by_user_and_status(user_id, status)
+#         return res
+#     except Exception:
+#         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
 async def put_post_by_post_id(post_id: str, post: PostBase):
