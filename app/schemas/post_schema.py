@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone, datetime
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
@@ -12,15 +13,15 @@ class PostBase(BaseModel):
     title: Optional[str]
     description: Optional[str]
     emergency: Optional[bool]
-    start_date: Optional[str]  # 나중에 datetime으로 변경
-    end_date: Optional[str]  # 나중에 datetime으로 변경
+    start_date: Optional[datetime]
+    end_date: Optional[datetime] 
     female: Optional[bool]
     image_url: Optional[str]
     item: Optional[str]
     lender_uuid: Optional[str]
     map_coordinates: Optional[List[Dict[str, float]]]
     price: Optional[int]
-    post_time: Optional[str]  # 나중에 datetime으로 변경
+    post_time: Optional[datetime]
     status: Optional[str]
 
 class PostUpdate(BaseModel):
