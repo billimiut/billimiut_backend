@@ -13,10 +13,10 @@ def jwt_decoder(token: str, key: str):
     
 def jwt_encoder(scope: str, data: dict):
     if scope == "access_token":
-        time = timedelta(minutes=30)
+        time = timedelta(days=30)
         key = os.environ.get('JWT_SECRET_KEY_ACCESS')
     elif scope == "refresh_token":
-        time = timedelta(days=7)
+        time = timedelta(days=60)
         key = os.environ.get('JWT_SECRET_KEY_REFRESH')
     else:
         return {"message": "Invalid scope"}
