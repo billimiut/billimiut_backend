@@ -29,6 +29,9 @@ async def get_post(post_id: str):
         writer_info = find_user_by_id(UserGetInfo(id=writer_id))
         res['nickname'] = writer_info['nickname']
         res['profile_image'] = writer_info['profile_image']
+        post_id = res['_id']
+        del res['_id']
+        res['post_id'] = post_id
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get post failed")
@@ -45,6 +48,9 @@ async def get_post():
             writer_info = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get posts failed")
@@ -74,6 +80,9 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
             post['_id'] = str(post['_id'])
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
 
         if status:
             # 일단 서버 자체적으로 구현
