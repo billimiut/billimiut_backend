@@ -98,11 +98,6 @@ async def login(user: UserLogin):
         res['lend_list'] = lend_list
         print(borrow_list)
 
-        # dummy data 넣기
-        temp_dummy_data(res)
-
-        res['female'] = bool(res['female'])
-
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception:
         return HTTPException(status_code=400, detail="Login failed")
