@@ -12,7 +12,7 @@ username = os.getenv('MONGO_USER')
 password = os.getenv('MONGO_PASS')
 host = os.getenv('MONGO_HOST')
 query_param = 'ssl=False'
-port = 27017
+port = os.getenv('MONGO_PORT')
 ca = certifi.where()
 uri = f"mongodb://{username}:{password}@{host}/?{query_param}"
 
