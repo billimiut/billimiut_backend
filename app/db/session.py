@@ -14,7 +14,7 @@ host = os.getenv('MONGO_HOST')
 query_param = 'ssl=False'
 port = os.getenv('MONGO_PORT')
 ca = certifi.where()
-uri = f"mongodb://{username}:{password}@{host}/?{query_param}"
+uri = f"mongodb://{username}:{password}@{host}:{port}/?{query_param}"
 
 dbname = 'billimiut'
 client = MongoClient(uri)[dbname]
