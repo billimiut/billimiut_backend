@@ -96,6 +96,10 @@ async def login(user: UserLogin):
 
         res['borrow_list'] = borrow_list
         res['lend_list'] = lend_list
+
+        res['borrow_count'] = len(borrow_list)
+        res['lend_count'] = len(lend_list)
+        
         print(borrow_list)
 
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
