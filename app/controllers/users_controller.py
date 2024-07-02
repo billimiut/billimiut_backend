@@ -110,7 +110,7 @@ async def login(user: UserLogin):
 @router.get("/users/login/kakao")
 def kakaologin():
     client_id = os.environ.get('KAKAO_REST_API_KEY')
-    redirect_uri = "http://127.0.0.1:8000/login/kakao/callback"
+    redirect_uri = os.environ.get('KAKAO_REDIRECT_URI')
 
     config = {
         "client_id": client_id,
@@ -121,12 +121,12 @@ def kakaologin():
     return RedirectResponse(url=f"https://kauth.kakao.com/oauth/authorize?{params}")
 
 
-@router.get('/login/kakao/callback')
+@router.get('/users/login/kakao/callback')
 async def kakaocallback(request: Request):
     query = request.query_params
     code = query.get('code')
     clietn_id = os.environ.get('KAKAO_REST_API_KEY')
-    redirect_uri = "http://127.0.0.1:8000/login/kakao/callback"
+    redirect_uri = os.environ.get('KAKAO_REDIRECT_URI')
     client_secret = os.environ.get('KAKAO_CLIENT_SECRET')
 
     config = {
@@ -167,10 +167,70 @@ async def kakaocallback(request: Request):
         # 이미 유저 존재하는지 확인하는 과정 필요
         try:
             res = insert_user(user)
-            user = user.model_dump()
-            message_access, access_token = jwt_encoder("access_token", user)
-            message_refresh, refresh_token = jwt_encoder("refresh_token", user)
-            return {"access_token": access_token, "refresh_token": refresh_token}
+            try:
+                # 예외처리 부분이 이상해서 일단 제거함
+                message_access, access_token = jwt_encoder("access_token", res)
+                message_refresh, refresh_token = jwt_encoder("refresh_token", res)
+
+                res = find_user_by_id(UserGetInfo(id=res['_id']))
+                print("res")
+                print(res)
+
+                # 민감한 데이터 삭제
+                delete_sensitive_data(res)
+
+                # 포스팅 목록 불러오기
+                borrow_list_id = res['borrow_list']
+                lend_list_id = res['lend_list']
+
+                borrow_list = []
+                lend_list = []
+
+                for borrow_item_id in borrow_list_id:
+                    item_info = find_post(borrow_item_id)
+                    borrow_list.append(item_info)
+
+                for lend_item_id in lend_list_id:
+                    item_info = find_post(lend_item_id)
+                    lend_list.append(item_info)
+
+                for post in borrow_list:
+                    if(post['borrow'] == True):
+                            writer_id = post['borrower_uuid']
+                    else:
+                        writer_id = post['lender_uuid']
+                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    post['nickname'] = writer_info['nickname']
+                    post['profile_image'] = writer_info['profile_image']
+                    post['writer_id'] = writer_id
+                    post_id = post['_id']
+                    del post['_id']
+                    post['post_id'] = post_id
+            
+                for post in lend_list:
+                    if(post['borrow'] == True):
+                            writer_id = post['borrower_uuid']
+                    else:
+                        writer_id = post['lender_uuid']
+                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    post['nickname'] = writer_info['nickname']
+                    post['profile_image'] = writer_info['profile_image']
+                    post['writer_id'] = writer_id
+                    post_id = post['_id']
+                    del post['_id']
+                    post['post_id'] = post_id
+
+                res['borrow_list'] = borrow_list
+                res['lend_list'] = lend_list
+
+                res['borrow_count'] = len(borrow_list)
+                res['lend_count'] = len(lend_list)
+                
+                print(borrow_list)
+
+                return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
+            except Exception:
+                return HTTPException(status_code=400, detail="Login failed")
         except Exception:
             return HTTPException(status_code=400, detail="Signup failed")
 
