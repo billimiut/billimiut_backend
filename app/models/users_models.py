@@ -48,6 +48,19 @@ def find_user_by_id(user:UserGetInfo):
         print(e)
         return None, {"error": "Find failed"}
     
+def find_user_by_email(user:UserGetInfo):
+    try:
+        user = user.model_dump()
+        response = client[collection].find_one({'id': user['id']})
+        if response:
+            response["_id"] = str(response["_id"])
+            return response
+        else:
+            return None, {"error": "User not found"}
+    except Exception as e:
+        print(e)
+        return None, {"error": "Find failed"}
+    
 def find_user_by_uuid (uuid: str):
     try:
         response = client[collection].find_one({"uuid": uuid})

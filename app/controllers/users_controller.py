@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 import httpx
 from app.models.post_models import find_post
 from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin, UserGetInfo, UserUpdate, UserCreateOauth
-from app.models.users_models import insert_user, find_user, find_user_by_id, update_user, signup_check
+from app.models.users_models import find_user_by_email, insert_user, find_user, find_user_by_id, update_user, signup_check
 
 from app.utils.jwt_util import jwt_decoder, jwt_encoder
 
@@ -186,7 +186,10 @@ async def kakaocallback(request: Request):
         user = UserCreate(id=email, nickname=nickname, female=female, type='kakao')
         # 이미 유저 존재하는지 확인하는 과정 필요
         try:
-            res = insert_user(user)
+            if find_user_by_email(UserGetInfo(id=email)):
+                res = find_user_by_email(UserGetInfo(id=email))
+            else:
+                res = insert_user(user)
             try:
                 # 예외처리 부분이 이상해서 일단 제거함
                 message_access, access_token = jwt_encoder("access_token", res)
