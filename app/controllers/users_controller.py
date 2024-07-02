@@ -56,9 +56,11 @@ async def login(user: UserLogin):
         # 포스팅 목록 불러오기
         borrow_list_id = res['borrow_list']
         lend_list_id = res['lend_list']
+        posts_id = res['posts']
 
         borrow_list = []
         lend_list = []
+        posts = []
 
         for borrow_item_id in borrow_list_id:
             item_info = find_post(borrow_item_id)
@@ -67,10 +69,14 @@ async def login(user: UserLogin):
         for lend_item_id in lend_list_id:
             item_info = find_post(lend_item_id)
             lend_list.append(item_info)
+        
+        for post_id in posts_id:
+            item_info = find_post(post_id)
+            posts.append(item_info)
 
         for post in borrow_list:
             if(post['borrow'] == True):
-                    writer_id = post['borrower_uuid']
+                writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
             writer_info = find_user_by_id(UserGetInfo(id=writer_id))
@@ -83,7 +89,20 @@ async def login(user: UserLogin):
     
         for post in lend_list:
             if(post['borrow'] == True):
-                    writer_id = post['borrower_uuid']
+                writer_id = post['borrower_uuid']
+            else:
+                writer_id = post['lender_uuid']
+            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
+            post['writer_id'] = writer_id
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
+        
+        for post in posts:
+            if(post['borrow'] == True):
+                writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
             writer_info = find_user_by_id(UserGetInfo(id=writer_id))
@@ -96,6 +115,7 @@ async def login(user: UserLogin):
 
         res['borrow_list'] = borrow_list
         res['lend_list'] = lend_list
+        res['posts'] = posts
 
         res['borrow_count'] = len(borrow_list)
         res['lend_count'] = len(lend_list)
@@ -182,9 +202,11 @@ async def kakaocallback(request: Request):
                 # 포스팅 목록 불러오기
                 borrow_list_id = res['borrow_list']
                 lend_list_id = res['lend_list']
+                posts_id = res['posts']
 
                 borrow_list = []
                 lend_list = []
+                posts = []
 
                 for borrow_item_id in borrow_list_id:
                     item_info = find_post(borrow_item_id)
@@ -193,10 +215,14 @@ async def kakaocallback(request: Request):
                 for lend_item_id in lend_list_id:
                     item_info = find_post(lend_item_id)
                     lend_list.append(item_info)
+                
+                for post_id in posts_id:
+                    item_info = find_post(post_id)
+                    posts.append(item_info)
 
                 for post in borrow_list:
                     if(post['borrow'] == True):
-                            writer_id = post['borrower_uuid']
+                        writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
                     writer_info = find_user_by_id(UserGetInfo(id=writer_id))
@@ -209,7 +235,20 @@ async def kakaocallback(request: Request):
             
                 for post in lend_list:
                     if(post['borrow'] == True):
-                            writer_id = post['borrower_uuid']
+                        writer_id = post['borrower_uuid']
+                    else:
+                        writer_id = post['lender_uuid']
+                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    post['nickname'] = writer_info['nickname']
+                    post['profile_image'] = writer_info['profile_image']
+                    post['writer_id'] = writer_id
+                    post_id = post['_id']
+                    del post['_id']
+                    post['post_id'] = post_id
+                
+                for post in posts:
+                    if(post['borrow'] == True):
+                        writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
                     writer_info = find_user_by_id(UserGetInfo(id=writer_id))
@@ -222,6 +261,7 @@ async def kakaocallback(request: Request):
 
                 res['borrow_list'] = borrow_list
                 res['lend_list'] = lend_list
+                res['posts'] = posts
 
                 res['borrow_count'] = len(borrow_list)
                 res['lend_count'] = len(lend_list)
