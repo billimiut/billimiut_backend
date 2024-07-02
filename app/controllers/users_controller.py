@@ -48,6 +48,8 @@ async def sign_up(user: UserCreateService):
 async def login(user: UserLogin):
     try:
         res, message = find_user(user)
+        print(res)
+        print(type(res))
         # 예외처리 부분이 이상해서 일단 제거함
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
@@ -81,7 +83,7 @@ async def login(user: UserLogin):
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
-            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_id'] = writer_id
@@ -94,7 +96,7 @@ async def login(user: UserLogin):
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
-            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_id'] = writer_id
@@ -107,7 +109,7 @@ async def login(user: UserLogin):
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
-            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_id'] = writer_id
@@ -125,7 +127,9 @@ async def login(user: UserLogin):
         print(borrow_list)
 
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
-    except Exception:
+    except Exception as e:
+        traceback.print_exc()
+        print(str(e))
         return HTTPException(status_code=400, detail="Login failed")
 
 
@@ -230,7 +234,7 @@ async def kakaocallback(request: Request):
                         writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
-                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
                     post['nickname'] = writer_info['nickname']
                     post['profile_image'] = writer_info['profile_image']
                     post['writer_id'] = writer_id
@@ -243,7 +247,7 @@ async def kakaocallback(request: Request):
                         writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
-                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
                     post['nickname'] = writer_info['nickname']
                     post['profile_image'] = writer_info['profile_image']
                     post['writer_id'] = writer_id
@@ -256,7 +260,7 @@ async def kakaocallback(request: Request):
                         writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
-                    writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
                     post['nickname'] = writer_info['nickname']
                     post['profile_image'] = writer_info['profile_image']
                     post['writer_id'] = writer_id
@@ -290,32 +294,51 @@ async def get_my_info(req: Request):
     token = auth_header.split(' ')[1]
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
-    res = find_user_by_id(UserGetInfo(id=id))
+    res, message = find_user_by_id(UserGetInfo(id=id))
 
     # 민감한 데이터 삭제
     delete_sensitive_data(res)
 
-
     # 포스팅 목록 불러오기
     borrow_list_id = res['borrow_list']
     lend_list_id = res['lend_list']
+    posts_id = res['posts']
 
     borrow_list = []
     lend_list = []
+    posts = []
 
-    for item_id in borrow_list_id:
-        item_info = find_post(item_id)
+    for borrow_item_id in borrow_list_id:
+        item_info = find_post(borrow_item_id)
         borrow_list.append(item_info)
-    for item_id in lend_list_id:
-        item_info = find_post(item_id)
+
+    for lend_item_id in lend_list_id:
+        item_info = find_post(lend_item_id)
         lend_list.append(item_info)
+    
+    for post_id in posts_id:
+        item_info = find_post(post_id)
+        posts.append(item_info)
 
     for post in borrow_list:
         if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
+            writer_id = post['borrower_uuid']
         else:
             writer_id = post['lender_uuid']
-        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
+        post['nickname'] = writer_info['nickname']
+        post['profile_image'] = writer_info['profile_image']
+        post['writer_id'] = writer_id
+        post_id = post['_id']
+        del post['_id']
+        post['post_id'] = post_id
+
+    for post in lend_list:
+        if(post['borrow'] == True):
+            writer_id = post['borrower_uuid']
+        else:
+            writer_id = post['lender_uuid']
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
         post['nickname'] = writer_info['nickname']
         post['profile_image'] = writer_info['profile_image']
         post['writer_id'] = writer_id
@@ -323,12 +346,12 @@ async def get_my_info(req: Request):
         del post['_id']
         post['post_id'] = post_id
     
-    for post in lend_list:
+    for post in posts:
         if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
+            writer_id = post['borrower_uuid']
         else:
             writer_id = post['lender_uuid']
-        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
         post['nickname'] = writer_info['nickname']
         post['profile_image'] = writer_info['profile_image']
         post['writer_id'] = writer_id
@@ -338,6 +361,10 @@ async def get_my_info(req: Request):
 
     res['borrow_list'] = borrow_list
     res['lend_list'] = lend_list
+    res['posts'] = posts
+
+    res['borrow_count'] = len(borrow_list)
+    res['lend_count'] = len(lend_list)
 
     # dummy data 넣기
     temp_dummy_data(res)
