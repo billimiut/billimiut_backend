@@ -41,7 +41,7 @@ def find_user_by_id(user:UserGetInfo):
         response = client[collection].find_one({'_id': ObjectId(user['id'])})
         if response:
             response["_id"] = str(response["_id"])
-            return response
+            return response, {"message": "Success"}
         else:
             return None, {"error": "User not found"}
     except Exception as e:
@@ -54,7 +54,7 @@ def find_user_by_email(user:UserGetInfo):
         response = client[collection].find_one({'id': user['id']})
         if response:
             response["_id"] = str(response["_id"])
-            return response
+            return response, {"message": "Success"}
         else:
             return None, {"error": "User not found"}
     except Exception as e:

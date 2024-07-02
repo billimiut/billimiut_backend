@@ -13,6 +13,8 @@ from app.utils.jwt_util import jwt_decoder, jwt_encoder
 
 #login_user, signup_user, get_my_info, put_my_info
 
+import traceback
+
 router = APIRouter()
 
 
@@ -186,16 +188,16 @@ async def kakaocallback(request: Request):
         user = UserCreate(id=email, nickname=nickname, female=female, type='kakao')
         # 이미 유저 존재하는지 확인하는 과정 필요
         try:
-            if find_user_by_email(UserGetInfo(id=email)):
-                res = find_user_by_email(UserGetInfo(id=email))
-            else:
+            res, message = find_user_by_email(UserGetInfo(id=email))
+            if res == None:
+                print("signup")
                 res = insert_user(user)
             try:
                 # 예외처리 부분이 이상해서 일단 제거함
                 message_access, access_token = jwt_encoder("access_token", res)
                 message_refresh, refresh_token = jwt_encoder("refresh_token", res)
 
-                res = find_user_by_id(UserGetInfo(id=res['_id']))
+                res, message = find_user_by_id(UserGetInfo(id=res['_id']))
                 print("res")
                 print(res)
 
@@ -272,9 +274,13 @@ async def kakaocallback(request: Request):
                 print(borrow_list)
 
                 return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
-            except Exception:
+            except Exception as e:
+                traceback.print_exc()
+                print(str(e))
                 return HTTPException(status_code=400, detail="Login failed")
-        except Exception:
+        except Exception as e:
+            traceback.print_exc()
+            print(str(e))
             return HTTPException(status_code=400, detail="Signup failed")
 
 
