@@ -48,4 +48,3 @@ class PostMake(BaseModel):
     price: int = Form(...)
     post_time: datetime = Form(...)
     status: str = Form(...)
-    image_file: List[UploadFile] = File([])

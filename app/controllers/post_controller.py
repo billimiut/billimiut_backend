@@ -10,13 +10,12 @@ from app.middlewares.images import upload_image
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: PostMake):#, image_file: UploadFile = File(...)):
+async def create_post(post: str = Form(...), image_file: UploadFile = File(...)):
     try:
-        image_file = post.image_file
-        filename = upload_image(image_file)
-        post_dict = post.model_dump()
+        # image_file = post.image_file
+        filename = await upload_image(image_file)
+        post_dict = json.loads(post)
         post_dict['image_url'] = filename
-        del post_dict['image_file']
         post = PostBase(**post_dict)
         res = insert_post(post)
         return res
@@ -128,7 +127,7 @@ async def put_post_by_post_id(post_id:str, post: PostMake):
         return HTTPException(status_code=400, detail="Update post failed")
     
 # @router.post("/post/upload_image")
-# async def upload_image(post:str=Form(...),file: UploadFile = File(...)):
+# async def upload_image(file: UploadFile = File(...)):
 #     try:
 #         post_dict = json.loads(post)
 #         print(post_dict)
@@ -140,20 +139,20 @@ async def put_post_by_post_id(post_id:str, post: PostMake):
 #         image = convert_image_to_bytes(image)
 #         upload_to_s3(image, "billimiut-post-image", filename)
 #         return {"filename": filename}
-#         # else:
-#         #     return HTTPException(status_code=400, detail="Upload image failed")
-#         # 이미지를 서버(리눅스)에 저장하는 코드.
-#         # post_dict = json.loads(post)
-#         # post = PostBase(**post_dict)
-#         # post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
-#         # res = find_post(post_id)
-#         # if res:
-#         #     current_dir = os.path.dirname(os.path.realpath(__file__)) 
-#         #     UPLOAD_DIR = os.path.join(current_dir, "../images")
-#         #     content = await file.read()
-#         #     filename = f"{post_id}.png"
-#         #     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
-#         #         f.write(content)
-#         #     return {"filename": filename, "post_id": post_id, "status": "success"}
-#     except Exception:
-#         return HTTPException(status_code=400, detail="Upload image failed")
+        # else:
+        #     return HTTPException(status_code=400, detail="Upload image failed")
+        # 이미지를 서버(리눅스)에 저장하는 코드.
+        # post_dict = json.loads(post)
+        # post = PostBase(**post_dict)
+        # post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
+        # res = find_post(post_id)
+        # if res:
+        #     current_dir = os.path.dirname(os.path.realpath(__file__)) 
+        #     UPLOAD_DIR = os.path.join(current_dir, "../images")
+        #     content = await file.read()
+        #     filename = f"{post_id}.png"
+        #     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
+        #         f.write(content)
+        #     return {"filename": filename, "post_id": post_id, "status": "success"}
+    except Exception:
+        return HTTPException(status_code=400, detail="Upload image failed")
