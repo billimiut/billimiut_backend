@@ -114,8 +114,15 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 #         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
-async def put_post_by_post_id(post_id: str, post: PostBase):
+async def put_post_by_post_id(post_id:str, post: PostMake):
     try:
+        image_file = post.image_file
+        filename = upload_image(image_file)
+        post_dict = post.model_dump()
+        post_dict['image_url'] = filename
+        del post_dict['image_file']
+        post = PostBase(**post_dict)
+
         res = update_post(post_id, post)
         return res
     except Exception:

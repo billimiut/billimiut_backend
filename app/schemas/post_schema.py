@@ -49,4 +49,3 @@ class PostMake(BaseModel):
     post_time: Optional[datetime]
     status: Optional[str]  
     image_file: Optional[UploadFile] = File(...)
-    
