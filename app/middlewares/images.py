@@ -1,7 +1,22 @@
 import secrets
 from PIL import Image, ImageOps
-from fastapi import UploadFile, HTTPException, status
+from fastapi import UploadFile, HTTPException, status,File
 import io 
+from app.middlewares.amazon import upload_to_s3
+from datetime import datetime, timedelta, timezone
+
+async def upload_image(file: UploadFile = File(...)):
+    try:
+        file = await validate_image_type(file)
+        file = await validate_image_size(file)
+        file = change_filename(file)
+        image = resize_image(file)
+        image_bytes = convert_image_to_bytes(image)
+        upload_to_s3(image_bytes, 'billimiut-post-image', file.filename)
+        return file.filename
+    except HTTPException as e:
+        return False
+
 async def validate_image_type(file: UploadFile) -> UploadFile:
     if file.filename.split(".")[-1].lower() not in ["jpg", "jpeg", "png"]:
         raise HTTPException(
@@ -29,7 +44,8 @@ def change_filename(file: UploadFile) -> UploadFile:
     이미지 이름 변경
     """
     random_name = secrets.token_urlsafe(16)
-    file.filename = f"{random_name}.jpeg"
+    # file.filename = f"{random_name}.jpeg"
+    file.filename = f"{datetime.now().timestamp()}.png"    
     return file
 
 

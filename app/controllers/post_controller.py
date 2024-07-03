@@ -1,19 +1,22 @@
 from typing import Optional
-from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form
+from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
 from app.models.users_models import find_user_by_id
-from app.schemas.post_schema import PostBase, PostUpdate
+from app.schemas.post_schema import PostBase, PostUpdate, PostMake
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post
 import os,json
 from app.schemas.users_schema import UserGetInfo
-from app.middlewares.amazon import upload_to_s3
-from app.middlewares.images import validate_image_type, validate_image_size, change_filename, resize_image, convert_image_to_bytes
-
+from app.middlewares.images import upload_image
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: PostBase):
+async def create_post(post: PostMake):#, image_file: UploadFile = File(...)):
     try:
-        # 중복여부 확인 필요
+        image_file = post.image_file
+        filename = upload_image(image_file)
+        post_dict = post.model_dump()
+        post_dict['image_url'] = filename
+        del post_dict['image_file']
+        post = PostBase(**post_dict)
         res = insert_post(post)
         return res
     except Exception:
@@ -115,37 +118,33 @@ async def put_post_by_post_id(post_id: str, post: PostBase):
     except Exception:
         return HTTPException(status_code=400, detail="Update post failed")
     
-@router.post("/post/upload_image")
-async def upload_image(post:str=Form(...),file: UploadFile = File(...)):
-    try:
-        print("hello")
-        post_dict = json.loads(post)
-        print(post_dict)
-        # post_id = post_dict['borrower_uuid'] if post_dict['borrower_uuid'] else post_dict['lender_uuid']
-        # res = find_post(post_id)
-        # if res:
-        file = await validate_image_type(file)
-        file = await validate_image_size(file)
-        file = change_filename(file)
-        filename = f"{post_dict['_id']}.png"
-        image = resize_image(file)
-        image = convert_image_to_bytes(image)
-        upload_to_s3(image, "billimiut-post-image", filename)
-        return {"filename": filename}
-        # else:
-        #     return HTTPException(status_code=400, detail="Upload image failed")
-        # 이미지를 서버(리눅스)에 저장하는 코드.
-        # post_dict = json.loads(post)
-        # post = PostBase(**post_dict)
-        # post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
-        # res = find_post(post_id)
-        # if res:
-        #     current_dir = os.path.dirname(os.path.realpath(__file__)) 
-        #     UPLOAD_DIR = os.path.join(current_dir, "../images")
-        #     content = await file.read()
-        #     filename = f"{post_id}.png"
-        #     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
-        #         f.write(content)
-        #     return {"filename": filename, "post_id": post_id, "status": "success"}
-    except Exception:
-        return HTTPException(status_code=400, detail="Upload image failed")
+# @router.post("/post/upload_image")
+# async def upload_image(post:str=Form(...),file: UploadFile = File(...)):
+#     try:
+#         post_dict = json.loads(post)
+#         print(post_dict)
+#         file = await validate_image_type(file)
+#         file = await validate_image_size(file)
+#         file = change_filename(file)
+#         filename = f"{post_dict['_id']}.png"
+#         image = resize_image(file)
+#         image = convert_image_to_bytes(image)
+#         upload_to_s3(image, "billimiut-post-image", filename)
+#         return {"filename": filename}
+#         # else:
+#         #     return HTTPException(status_code=400, detail="Upload image failed")
+#         # 이미지를 서버(리눅스)에 저장하는 코드.
+#         # post_dict = json.loads(post)
+#         # post = PostBase(**post_dict)
+#         # post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
+#         # res = find_post(post_id)
+#         # if res:
+#         #     current_dir = os.path.dirname(os.path.realpath(__file__)) 
+#         #     UPLOAD_DIR = os.path.join(current_dir, "../images")
+#         #     content = await file.read()
+#         #     filename = f"{post_id}.png"
+#         #     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
+#         #         f.write(content)
+#         #     return {"filename": filename, "post_id": post_id, "status": "success"}
+#     except Exception:
+#         return HTTPException(status_code=400, detail="Upload image failed")
