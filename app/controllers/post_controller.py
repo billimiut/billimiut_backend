@@ -1,3 +1,4 @@
+import traceback
 from typing import Optional
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
 from app.models.users_models import find_user_by_id
@@ -30,7 +31,7 @@ async def get_post(post_id: str):
             writer_id = res['borrower_uuid']
         else:
             writer_id = res['lender_uuid']
-        writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
         res['nickname'] = writer_info['nickname']
         res['profile_image'] = writer_info['profile_image']
         res['writer_id'] = writer_id
@@ -50,7 +51,7 @@ async def get_post():
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
-            writer_info = find_user_by_id(UserGetInfo(id=writer_id))
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_id'] = writer_id
@@ -58,7 +59,9 @@ async def get_post():
             del post['_id']
             post['post_id'] = post_id
         return res
-    except Exception:
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
         return HTTPException(status_code=400, detail="Get posts failed")
 
 @router.put("/post/status") ## 이거 굳이 borrower uuid랑 lender uuid를 받아올 필요가 없는거 같음. post_id만 받아오면 될듯
@@ -80,7 +83,7 @@ async def delete_post(post_id: str):
 @router.get("/post/personal/{user_id}")
 async def get_posts_by_user(user_id: str, status: Optional[str] = None):
     try:
-        writer_info = find_user_by_id(UserGetInfo(id=user_id))
+        writer_info, message = find_user_by_id(UserGetInfo(id=user_id))
         res = find_posts_by_user(user_id)
         for post in res:
             post['_id'] = str(post['_id'])

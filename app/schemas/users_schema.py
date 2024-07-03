@@ -16,10 +16,18 @@ class UserBase(BaseModel):
 
 class UserCreate(BaseModel):
     id: str
-    pw: str
+    pw: str = ""
     nickname: str
     female: bool
     type: str
+    borrow_list: list = []
+    chat_list: list = []
+    profile_image: str = ""
+    keywords: list = []
+    lend_list: list = []
+    posts: list = []
+    salt: str = ""
+    token: str = ""
 
 class UserCreateService(BaseModel):
     id: str
