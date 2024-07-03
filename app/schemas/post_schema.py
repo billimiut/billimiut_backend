@@ -34,7 +34,7 @@ class PostMake(BaseModel):
     detail_address: str = Form(...)
     dong: str = Form(...)
     borrow: bool = Form(...)
-    borrower_uuid: Optional[str] = Form(None)  # Nullable 설정
+    borrower_uuid: Optional[str] = Form(None)
     category: str = Form(...)
     title: str = Form(...)
     description: str = Form(...)
@@ -43,9 +43,9 @@ class PostMake(BaseModel):
     end_date: datetime = Form(...)
     female: bool = Form(...)
     item: str = Form(...)
-    lender_uuid: Optional[str] = Form(None)  # Nullable 설정
+    lender_uuid: Optional[str] = Form(None)
     map_coordinates: List[Dict[str, float]] = Form(...)
     price: int = Form(...)
     post_time: datetime = Form(...)
     status: str = Form(...)
-    image_file: UploadFile = File(...)
+    image_file: List[UploadFile] = File([])
