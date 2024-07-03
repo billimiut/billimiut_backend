@@ -28,13 +28,13 @@ async def get_post(post_id: str):
     try:
         res = find_post(post_id)
         if(res['borrow'] == True):
-            writer_id = res['borrower_uuid']
+            writer_uuid = res['borrower_uuid']
         else:
-            writer_id = res['lender_uuid']
-        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
+            writer_uuid = res['lender_uuid']
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
         res['nickname'] = writer_info['nickname']
         res['profile_image'] = writer_info['profile_image']
-        res['writer_id'] = writer_id
+        res['writer_uuid'] = writer_uuid
         post_id = res['_id']
         del res['_id']
         res['post_id'] = post_id
@@ -48,13 +48,13 @@ async def get_post():
         res = find_posts()
         for post in res:
             if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
+                writer_uuid = post['borrower_uuid']
             else:
-                writer_id = post['lender_uuid']
-            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
+                writer_uuid = post['lender_uuid']
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
-            post['writer_id'] = writer_id
+            post['writer_uuid'] = writer_uuid
             post_id = post['_id']
             del post['_id']
             post['post_id'] = post_id
@@ -90,7 +90,7 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             print(user_id)
-            post['writer_id'] = user_id
+            post['writer_uuid'] = user_id
             post_id = post['_id']
             del post['_id']
             post['post_id'] = post_id
