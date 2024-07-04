@@ -18,7 +18,8 @@ async def create_post(post: str = Form(...), image_file: UploadFile = File(...))
         post_dict['image_url'] = filename
         post = PostBase(**post_dict)
         res = insert_post(post)
-        return res
+        post_dict["_id"] = str(res)
+        return post_dict
     except Exception:
         return HTTPException(status_code=400, detail="Create post failed")
     
@@ -113,13 +114,11 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 #         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
-async def put_post_by_post_id(post_id:str, post: PostMake):
+async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: UploadFile = File(...)):
     try:
-        image_file = post.image_file
-        filename = upload_image(image_file)
-        post_dict = post.model_dump()
+        filename = await upload_image(image_file)
+        post_dict = json.loads(post)
         post_dict['image_url'] = filename
-        del post_dict['image_file']
         post = PostBase(**post_dict)
         res = update_post(post_id, post)
         return res

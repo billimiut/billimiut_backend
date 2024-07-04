@@ -11,7 +11,7 @@ def insert_post(post: PostBase):
     try:
         post = post.model_dump()
         response = client[collection].insert_one(post)
-        return {"_id": str(response.inserted_id)}
+        return str(response.inserted_id)
     except Exception as e:
         print(e)
         return {"error": "Insert failed"}
