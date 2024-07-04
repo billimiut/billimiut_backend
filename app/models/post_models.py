@@ -3,6 +3,7 @@ from bson import ObjectId
 
 from ..db.session import client
 from ..schemas.post_schema import PostBase, PostUpdate
+from .users_models import find_user_by_id
 
 collection = 'post' # post로?
 collection_temp = 'post_temp'

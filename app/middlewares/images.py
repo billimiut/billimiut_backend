@@ -5,6 +5,11 @@ import io
 from app.middlewares.amazon import upload_to_s3
 from datetime import datetime, timedelta, timezone
 
+from dotenv import load_dotenv,find_dotenv
+import os
+
+load_dotenv(find_dotenv())
+
 async def upload_image(file: UploadFile = File(...)):
     try:
         file = await validate_image_type(file)
@@ -43,9 +48,10 @@ def change_filename(file: UploadFile) -> UploadFile:
     """
     이미지 이름 변경
     """
-    random_name = secrets.token_urlsafe(16)
-    # file.filename = f"{random_name}.jpeg"
-    file.filename = f"{datetime.now().timestamp()}.png"    
+    # random_name = secrets.token_urlsafe(16)
+    # # file.filename = f"{random_name}.jpeg"
+    bucket_url = os.getenv("BUCKET_URL")
+    file.filename = f"{bucket_url}/{datetime.now().timestamp()}.png"    
     return file
 
 
