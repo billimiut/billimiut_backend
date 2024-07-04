@@ -1,5 +1,5 @@
 import traceback
-from typing import Optional
+from typing import Optional,List
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
 from app.models.users_models import find_user_by_id
 from app.schemas.post_schema import PostBase, PostUpdate, PostMake
@@ -10,12 +10,14 @@ from app.middlewares.images import upload_image
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: str = Form(...), image_file: UploadFile = File(...)):
+async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(...)):
     try:
-        # image_file = post.image_file
-        filename = await upload_image(image_file)
+        image_urls = []
+        for single_file in image_file:
+            filename = await upload_image(single_file)
+            image_urls.append(filename)
         post_dict = json.loads(post)
-        post_dict['image_url'] = filename
+        post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
         res = insert_post(post)
         post_dict["post_id"] = str(res)
