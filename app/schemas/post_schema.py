@@ -16,7 +16,7 @@ class PostBase(BaseModel):
     start_date: Optional[datetime]
     end_date: Optional[datetime] 
     female: Optional[bool]
-    image_url: Optional[str]
+    image_url: Optional[List[str]]
     item: Optional[str]
     lender_uuid: Optional[str]
     map_coordinate: Optional[Dict[str, float]]

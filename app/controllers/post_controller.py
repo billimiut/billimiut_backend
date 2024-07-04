@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/post")
 async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(...)):
     try:
-        image_urls = []
+        image_urls = []        
         for single_file in image_file:
             filename = await upload_image(single_file)
             image_urls.append(filename)
@@ -25,7 +25,6 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_id"] = post_dict['lender_uuid']
-        
         return post_dict
     except Exception:        
         return HTTPException(status_code=400, detail="Create post failed")
@@ -121,14 +120,21 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 #         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
-async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: UploadFile = File(...)):
+async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: List[UploadFile] = File(...)):
     try:
-        filename = await upload_image(image_file)
+        image_urls = []
+        for single_file in image_file:
+            filename = await upload_image(single_file)
+            image_urls.append(filename)
         post_dict = json.loads(post)
-        post_dict['image_url'] = filename
+        post_dict['image_url'] = image_urls        
         post = PostBase(**post_dict)
         res = update_post(post_id, post)
-        return res
+        if(post_dict['borrow'] == True):
+            post_dict["writer_id"] = post_dict['borrower_uuid']
+        else:
+            post_dict["writer_id"] = post_dict['lender_uuid']
+        return res, post_dict
     except Exception:
         return HTTPException(status_code=400, detail="Update post failed")
     
