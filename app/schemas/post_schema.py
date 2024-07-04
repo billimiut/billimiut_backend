@@ -19,7 +19,7 @@ class PostBase(BaseModel):
     image_url: Optional[str]
     item: Optional[str]
     lender_uuid: Optional[str]
-    map_coordinates: Optional[List[Dict[str, float]]]
+    map_coordinate: Optional[Dict[str, float]]
     price: Optional[int]
     post_time: Optional[datetime]
     status: Optional[str]
@@ -44,7 +44,7 @@ class PostMake(BaseModel):
     female: bool = Form(...)
     item: str = Form(...)
     lender_uuid: Optional[str] = Form(None)
-    map_coordinates: List[Dict[str, float]] = Form(...)
+    map_coordinate: List[Dict[str, float]] = Form(...)
     price: int = Form(...)
     post_time: datetime = Form(...)
     status: str = Form(...)

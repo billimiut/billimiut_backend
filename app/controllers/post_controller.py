@@ -18,9 +18,14 @@ async def create_post(post: str = Form(...), image_file: UploadFile = File(...))
         post_dict['image_url'] = filename
         post = PostBase(**post_dict)
         res = insert_post(post)
-        post_dict["_id"] = str(res)
+        post_dict["post_id"] = str(res)
+        if(post_dict['borrow'] == True):
+            post_dict["writer_id"] = post_dict['borrower_uuid']
+        else:
+            post_dict["writer_id"] = post_dict['lender_uuid']
+        
         return post_dict
-    except Exception:
+    except Exception:        
         return HTTPException(status_code=400, detail="Create post failed")
     
 @router.get("/post/{post_id}")
