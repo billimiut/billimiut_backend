@@ -8,6 +8,8 @@ RUN pip install -r requirements.txt
 
 RUN pip install pymongo
 
+RUN pip install bson
+
 RUN mkdir -p /workspace/log
 
 COPY . .
