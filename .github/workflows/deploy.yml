@@ -34,6 +34,9 @@ jobs:
             -e MONGO_HOST=${{ secrets.MONGO_HOST }} \
             -e JWT_SECRET_KEY_ACCESS=${{ secrets.JWT_SECRET_KEY_ACCESS }} \
             -e JWT_SECRET_KEY_REFRESH=${{ secrets.JWT_SECRET_KEY_REFRESH }} \
+            -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
+            -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
+            -e BUCKET_URL=${{ secrets.BUCKET_URL }} \
             -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
             -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
             -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
