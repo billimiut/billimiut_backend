@@ -4,11 +4,9 @@ WORKDIR /workspace
 
 COPY requirements.txt .
 
+RUN pip install --upgrade pip==21.1.1
+
 RUN pip install -r requirements.txt
-
-RUN pip install pymongo
-
-RUN pip install bson
 
 RUN mkdir -p /workspace/log
 
