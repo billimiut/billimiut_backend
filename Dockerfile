@@ -6,9 +6,9 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
-RUN pip intall pymongo
+RUN pip install pymongo
 
-RUN pip intall bson
+RUN pip install bson
 
 RUN mkdir -p /workspace/log
 
