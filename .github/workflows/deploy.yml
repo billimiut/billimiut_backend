@@ -38,4 +38,4 @@ jobs:
             -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
             -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
             --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
-            uvicorn main:app --host=0.0.0.0 --reload > log/log.txt 2>&1 &
+            uvicorn main:app --host=0.0.0.0 --reload &
