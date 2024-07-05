@@ -37,6 +37,5 @@ jobs:
             -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
             -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
             -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
-            -v /home/ubuntu/log:/workspace/log \
             --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
             uvicorn main:app --host=0.0.0.0 --reload > log/log.txt 2>&1 &
