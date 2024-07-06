@@ -26,7 +26,8 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
             post_dict["writer_uuid"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_uuid"] = post_dict['lender_uuid']
-        post_dict["nickname"] = find_user_by_id(UserGetInfo(id=post_dict["writer_uuid"]))[0]['nickname']
+        writer_info, message = find_user_by_id(UserGetInfo(id=post_dict["writer_uuid"]))
+        post_dict["nickname"] = writer_info["nickname"]
         return post_dict
     except Exception:        
         return HTTPException(status_code=400, detail="Create post failed")
