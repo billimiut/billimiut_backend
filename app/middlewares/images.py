@@ -17,9 +17,11 @@ async def upload_image(file: UploadFile = File(...)):
         file = change_filename(file)
         image = resize_image(file)
         image_bytes = convert_image_to_bytes(image)
-        bucket_url = os.getenv("BUCKET_URL")
+        print(file.filename)
         upload_to_s3(image_bytes, 'billimiut-post-image', file.filename)
+        bucket_url = os.getenv("BUCKET_URL")
         ret_filename = f"{bucket_url}/{file.filename}"
+        print(ret_filename)
         return ret_filename
     except HTTPException as e:
         return False
@@ -51,7 +53,7 @@ def change_filename(file: UploadFile) -> UploadFile:
     이미지 이름 변경
     """
     # random_name = secrets.token_urlsafe(16)
-    # # file.filename = f"{random_name}.jpeg"
+    # file.filename = f"{random_name}.jpeg"
     file.filename = f"{datetime.now().timestamp()}.png"    
     return file
 
