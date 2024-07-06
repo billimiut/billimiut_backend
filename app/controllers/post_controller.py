@@ -21,13 +21,16 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
         post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
         res = insert_post(post)
+        print(str(res))
         post_dict["post_id"] = str(res)
         if(post_dict['borrow'] == True):
             post_dict["writer_uuid"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_uuid"] = post_dict['lender_uuid']
+        print(post_dict["writer_uuid"])
         writer_info, message = find_user_by_id(UserGetInfo(id=post_dict["writer_uuid"]))
-        post_dict["nickname"] = writer_info["nickname"]
+        print(writer_info["nickname"])
+        post_dict["nickname"] = writer_info["nickname"]        
         return post_dict
     except Exception:        
         return HTTPException(status_code=400, detail="Create post failed")
@@ -59,7 +62,7 @@ async def get_post():
             if(post['borrow'] == True):
                 writer_uuid = post['borrower_uuid']
             else:
-                writer_uuid = post['lender_uuid']
+                writer_uuid = post['lender_uuid'] 
             writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
