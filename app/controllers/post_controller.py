@@ -7,6 +7,7 @@ from app.models.post_models import insert_post, find_post, find_posts, update_po
 import os,json
 from app.schemas.users_schema import UserGetInfo
 from app.middlewares.images import upload_image
+from app.models.users_models import find_user_by_id
 router = APIRouter()
 
 @router.post("/post")
@@ -25,7 +26,7 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
             post_dict["writer_uuid"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_uuid"] = post_dict['lender_uuid']
-        # post_dict["writer_id"] = 
+        post_dict["nickname"] = find_user_by_id(UserGetInfo(id=post_dict["writer_uuid"]))[0]['nickname']
         return post_dict
     except Exception:        
         return HTTPException(status_code=400, detail="Create post failed")
