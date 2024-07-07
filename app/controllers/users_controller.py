@@ -92,7 +92,7 @@ async def login(user: UserLogin):
             post['post_id'] = post_id
     
         for post in lend_list:
-            if(post['borrow'] == True):
+            if(post['borrow'] == False):
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
@@ -243,7 +243,7 @@ async def kakaocallback(request: Request):
                     post['post_id'] = post_id
             
                 for post in lend_list:
-                    if(post['borrow'] == True):
+                    if(post['borrow'] == False):
                         writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
@@ -334,7 +334,7 @@ async def get_my_info(req: Request):
         post['post_id'] = post_id
 
     for post in lend_list:
-        if(post['borrow'] == True):
+        if(post['borrow'] == False):
             writer_id = post['borrower_uuid']
         else:
             writer_id = post['lender_uuid']
