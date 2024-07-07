@@ -97,3 +97,19 @@ def update_user(user: UserUpdate):
     except Exception as e:
         print(e)
         return {"error": "Update failed"}
+    
+
+
+def update_user_post(writer_uuid: str, post_uuid: str):
+    try:
+        response = client[collection].find_one({'_id': ObjectId(writer_uuid)})
+        if response:
+            posts = response['posts']
+            posts.append(post_uuid)
+            response = client[collection].update_one({"_id": ObjectId(writer_uuid)}, {"$set": {"posts": posts}})
+            return {"message": response.modified_count}
+        else:
+            return {"error": "User not found"}
+    except Exception as e:
+        print(e)
+        return {"error": "Update failed"}

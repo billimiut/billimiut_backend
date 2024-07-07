@@ -48,8 +48,7 @@ async def sign_up(user: UserCreateService):
 async def login(user: UserLogin):
     try:
         res, message = find_user(user)
-        print(res)
-        print(type(res))
+
         # 예외처리 부분이 이상해서 일단 제거함
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
@@ -92,7 +91,7 @@ async def login(user: UserLogin):
             post['post_id'] = post_id
     
         for post in lend_list:
-            if(post['borrow'] == False):
+            if(post['borrow'] == True):
                 writer_id = post['borrower_uuid']
             else:
                 writer_id = post['lender_uuid']
@@ -123,8 +122,6 @@ async def login(user: UserLogin):
 
         res['borrow_count'] = len(borrow_list)
         res['lend_count'] = len(lend_list)
-        
-        print(borrow_list)
 
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception as e:
@@ -167,7 +164,6 @@ async def kakaocallback(request: Request):
     async with httpx.AsyncClient() as client:
         response = await client.post(f"https://kauth.kakao.com/oauth/token?{params}")
         rbody = response.json()
-        print(rbody)
         access_token = rbody['access_token']
         url = "https://kapi.kakao.com/v2/user/me"
         headers = {
@@ -181,7 +177,6 @@ async def kakaocallback(request: Request):
             raise HTTPException(status_code=response.status_code, detail=response.text)
 
         json_response = response.json()
-        print(json_response)
         information = json_response['kakao_account']
         nickname = information['profile']['nickname']
         email = information['email']
@@ -194,7 +189,6 @@ async def kakaocallback(request: Request):
         try:
             res, message = find_user_by_email(UserGetInfo(id=email))
             if res == None:
-                print("signup")
                 res = insert_user(user)
             try:
                 # 예외처리 부분이 이상해서 일단 제거함
@@ -202,8 +196,6 @@ async def kakaocallback(request: Request):
                 message_refresh, refresh_token = jwt_encoder("refresh_token", res)
 
                 res, message = find_user_by_id(UserGetInfo(id=res['_id']))
-                print("res")
-                print(res)
 
                 # 민감한 데이터 삭제
                 delete_sensitive_data(res)
@@ -243,7 +235,7 @@ async def kakaocallback(request: Request):
                     post['post_id'] = post_id
             
                 for post in lend_list:
-                    if(post['borrow'] == False):
+                    if(post['borrow'] == True):
                         writer_id = post['borrower_uuid']
                     else:
                         writer_id = post['lender_uuid']
@@ -274,8 +266,6 @@ async def kakaocallback(request: Request):
 
                 res['borrow_count'] = len(borrow_list)
                 res['lend_count'] = len(lend_list)
-                
-                print(borrow_list)
 
                 return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
             except Exception as e:
@@ -334,7 +324,7 @@ async def get_my_info(req: Request):
         post['post_id'] = post_id
 
     for post in lend_list:
-        if(post['borrow'] == False):
+        if(post['borrow'] == True):
             writer_id = post['borrower_uuid']
         else:
             writer_id = post['lender_uuid']

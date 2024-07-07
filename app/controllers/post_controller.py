@@ -1,7 +1,7 @@
 import traceback
 from typing import Optional,List
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
-from app.models.users_models import find_user_by_id
+from app.models.users_models import find_user_by_id, update_user_post
 from app.schemas.post_schema import PostBase, PostUpdate, PostMake
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post
 import os,json
@@ -28,7 +28,9 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
         else:
             post_dict["writer_uuid"] = post_dict['lender_uuid']
         print(post_dict["writer_uuid"])
-        writer_info, message = find_user_by_id(UserGetInfo(id=post_dict["writer_uuid"]))
+        writer_uuid = post_dict["writer_uuid"]
+        update_user_post(writer_uuid, post_dict["post_id"])
+        writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
         print(writer_info["nickname"])
         post_dict["nickname"] = writer_info["nickname"]        
         return post_dict
