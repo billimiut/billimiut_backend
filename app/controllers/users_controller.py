@@ -1,29 +1,14 @@
-import os
+import os, traceback, httpx
 from urllib.parse import urlencode
 from fastapi import HTTPException, APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
-import httpx
-from app.models.post_models import find_post
-from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin, UserGetInfo, UserUpdate, UserCreateOauth
-from app.models.users_models import find_user_by_email, insert_user, find_user, find_user_by_id, update_user, signup_check
 
+from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin, UserGetInfo, UserUpdate
+from app.models.users_models import find_user_by_email, insert_user, find_user, find_user_by_id, update_user
 from app.utils.jwt_util import jwt_decoder, jwt_encoder
-
-# from app.database.session import db
-
-#login_user, signup_user, get_my_info, put_my_info
-
-import traceback
+from app.utils.user_util import default_user_info
 
 router = APIRouter()
-
-
-def delete_sensitive_data(res: dict):
-    del res['pw']
-    del res['salt']
-    del res['type']
-    del res['token']
-
 
 def temp_dummy_data(res: dict):
     res["borrow_count"] = 0
@@ -53,75 +38,7 @@ async def login(user: UserLogin):
         message_access, access_token = jwt_encoder("access_token", res)
         message_refresh, refresh_token = jwt_encoder("refresh_token", res)
 
-        # 민감한 데이터 삭제
-        delete_sensitive_data(res)
-
-        # 포스팅 목록 불러오기
-        borrow_list_id = res['borrow_list']
-        lend_list_id = res['lend_list']
-        posts_id = res['posts']
-
-        borrow_list = []
-        lend_list = []
-        posts = []
-
-        for borrow_item_id in borrow_list_id:
-            item_info = find_post(borrow_item_id)
-            borrow_list.append(item_info)
-
-        for lend_item_id in lend_list_id:
-            item_info = find_post(lend_item_id)
-            lend_list.append(item_info)
-        
-        for post_id in posts_id:
-            item_info = find_post(post_id)
-            posts.append(item_info)
-
-        for post in borrow_list:
-            if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
-            else:
-                writer_id = post['lender_uuid']
-            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-            post['nickname'] = writer_info['nickname']
-            post['profile_image'] = writer_info['profile_image']
-            post['writer_id'] = writer_id
-            post_id = post['_id']
-            del post['_id']
-            post['post_id'] = post_id
-    
-        for post in lend_list:
-            if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
-            else:
-                writer_id = post['lender_uuid']
-            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-            post['nickname'] = writer_info['nickname']
-            post['profile_image'] = writer_info['profile_image']
-            post['writer_id'] = writer_id
-            post_id = post['_id']
-            del post['_id']
-            post['post_id'] = post_id
-        
-        for post in posts:
-            if(post['borrow'] == True):
-                writer_id = post['borrower_uuid']
-            else:
-                writer_id = post['lender_uuid']
-            writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-            post['nickname'] = writer_info['nickname']
-            post['profile_image'] = writer_info['profile_image']
-            post['writer_id'] = writer_id
-            post_id = post['_id']
-            del post['_id']
-            post['post_id'] = post_id
-
-        res['borrow_list'] = borrow_list
-        res['lend_list'] = lend_list
-        res['posts'] = posts
-
-        res['borrow_count'] = len(borrow_list)
-        res['lend_count'] = len(lend_list)
+        res = default_user_info(res)
 
         return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
     except Exception as e:
@@ -197,75 +114,7 @@ async def kakaocallback(request: Request):
 
                 res, message = find_user_by_id(UserGetInfo(id=res['_id']))
 
-                # 민감한 데이터 삭제
-                delete_sensitive_data(res)
-
-                # 포스팅 목록 불러오기
-                borrow_list_id = res['borrow_list']
-                lend_list_id = res['lend_list']
-                posts_id = res['posts']
-
-                borrow_list = []
-                lend_list = []
-                posts = []
-
-                for borrow_item_id in borrow_list_id:
-                    item_info = find_post(borrow_item_id)
-                    borrow_list.append(item_info)
-
-                for lend_item_id in lend_list_id:
-                    item_info = find_post(lend_item_id)
-                    lend_list.append(item_info)
-                
-                for post_id in posts_id:
-                    item_info = find_post(post_id)
-                    posts.append(item_info)
-
-                for post in borrow_list:
-                    if(post['borrow'] == True):
-                        writer_id = post['borrower_uuid']
-                    else:
-                        writer_id = post['lender_uuid']
-                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-                    post['nickname'] = writer_info['nickname']
-                    post['profile_image'] = writer_info['profile_image']
-                    post['writer_id'] = writer_id
-                    post_id = post['_id']
-                    del post['_id']
-                    post['post_id'] = post_id
-            
-                for post in lend_list:
-                    if(post['borrow'] == True):
-                        writer_id = post['borrower_uuid']
-                    else:
-                        writer_id = post['lender_uuid']
-                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-                    post['nickname'] = writer_info['nickname']
-                    post['profile_image'] = writer_info['profile_image']
-                    post['writer_id'] = writer_id
-                    post_id = post['_id']
-                    del post['_id']
-                    post['post_id'] = post_id
-                
-                for post in posts:
-                    if(post['borrow'] == True):
-                        writer_id = post['borrower_uuid']
-                    else:
-                        writer_id = post['lender_uuid']
-                    writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-                    post['nickname'] = writer_info['nickname']
-                    post['profile_image'] = writer_info['profile_image']
-                    post['writer_id'] = writer_id
-                    post_id = post['_id']
-                    del post['_id']
-                    post['post_id'] = post_id
-
-                res['borrow_list'] = borrow_list
-                res['lend_list'] = lend_list
-                res['posts'] = posts
-
-                res['borrow_count'] = len(borrow_list)
-                res['lend_count'] = len(lend_list)
+                res = default_user_info(res)
 
                 return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
             except Exception as e:
@@ -286,80 +135,10 @@ async def get_my_info(req: Request):
     id = information['data']['_id']
     res, message = find_user_by_id(UserGetInfo(id=id))
 
-    # 민감한 데이터 삭제
-    delete_sensitive_data(res)
-
-    # 포스팅 목록 불러오기
-    borrow_list_id = res['borrow_list']
-    lend_list_id = res['lend_list']
-    posts_id = res['posts']
-
-    borrow_list = []
-    lend_list = []
-    posts = []
-
-    for borrow_item_id in borrow_list_id:
-        item_info = find_post(borrow_item_id)
-        borrow_list.append(item_info)
-
-    for lend_item_id in lend_list_id:
-        item_info = find_post(lend_item_id)
-        lend_list.append(item_info)
-    
-    for post_id in posts_id:
-        item_info = find_post(post_id)
-        posts.append(item_info)
-
-    for post in borrow_list:
-        if(post['borrow'] == True):
-            writer_id = post['borrower_uuid']
-        else:
-            writer_id = post['lender_uuid']
-        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-        post['nickname'] = writer_info['nickname']
-        post['profile_image'] = writer_info['profile_image']
-        post['writer_id'] = writer_id
-        post_id = post['_id']
-        del post['_id']
-        post['post_id'] = post_id
-
-    for post in lend_list:
-        if(post['borrow'] == True):
-            writer_id = post['borrower_uuid']
-        else:
-            writer_id = post['lender_uuid']
-        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-        post['nickname'] = writer_info['nickname']
-        post['profile_image'] = writer_info['profile_image']
-        post['writer_id'] = writer_id
-        post_id = post['_id']
-        del post['_id']
-        post['post_id'] = post_id
-    
-    for post in posts:
-        if(post['borrow'] == True):
-            writer_id = post['borrower_uuid']
-        else:
-            writer_id = post['lender_uuid']
-        writer_info, message = find_user_by_id(UserGetInfo(id=writer_id))
-        post['nickname'] = writer_info['nickname']
-        post['profile_image'] = writer_info['profile_image']
-        post['writer_id'] = writer_id
-        post_id = post['_id']
-        del post['_id']
-        post['post_id'] = post_id
-
-    res['borrow_list'] = borrow_list
-    res['lend_list'] = lend_list
-    res['posts'] = posts
-
-    res['borrow_count'] = len(borrow_list)
-    res['lend_count'] = len(lend_list)
+    res = default_user_info(res)
 
     # dummy data 넣기
     temp_dummy_data(res)
-
-    res['female'] = bool(res['female'])
 
     return res
 

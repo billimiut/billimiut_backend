@@ -1,3 +1,5 @@
+import traceback
+from bson import ObjectId
 from app.schemas.chat_schema import Message
 from ..db.session import client
 
@@ -6,32 +8,48 @@ collection = 'chat'
 def insert_chat(chat: Message):
     try:        
         chat = chat.model_dump()
-        print(chat)
-        print("~~!")
-        chat_id = ':'.join(sorted([chat['sender_id'], chat['receiver_id']]))
+
+        post_id = chat['post_id']
+        sender_id = chat['sender_id']
+        receiver_id = chat['receiver_id']
+
+        # 변경 시 적용할 코드
+        users = ':'.join(sorted([sender_id, receiver_id]))
+        chat_id = '-'.join([post_id, users])
+
+        # 기존코드
+        # chat_id = ':'.join(sorted([sender_id, receiver_id]))
+
+        new_chat = {
+            "sender_id": sender_id,
+            "message": chat["message"],
+            "time": chat["time"]
+        }
+
         response = client[collection].find_one({"_id": chat_id})
         if response:
             client[collection].update_one(
                 {"_id": chat_id},
-                {"$push": {"message": chat}}
+                {"$push": {"message": new_chat}}
             )
         else:
             client[collection].insert_one(
-                {"_id": chat_id, "message": [chat]}
+                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id]}
             )
-        client[collection].update_one(
-            {"_id": chat["sender_id"]},
-            {"$addToSet": {"chat_list": f"{chat['receiver_id']}-{chat['post_id']}"}},
-            upsert=True
-        )
-        client[collection].update_one(
-            {"_id": chat["receiver_id"]},
-            {"$addToSet": {"chat_list": f"{chat['sender_id']}-{chat['post_id']}"}},
-            upsert=True
-        )
+            client['user'].update_one(
+                {"_id": ObjectId(sender_id)},
+                {"$addToSet": {"chat_list": chat_id}},
+                upsert=True
+            )
+            client['user'].update_one(
+                {"_id": ObjectId(receiver_id)},
+                {"$addToSet": {"chat_list": chat_id}},
+                upsert=True
+            )
         return True
     except Exception as e:
-        print(e)
+        traceback.print_exc()
+        print(str(e))
         return False
 
 def find_chat(chat_id: str):

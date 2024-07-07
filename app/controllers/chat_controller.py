@@ -1,3 +1,4 @@
+import traceback
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, WebSocket, WebSocketDisconnect
 from app.schemas.chat_schema import manager, Message
 from app.models.chat_models import insert_chat,find_chat
@@ -31,6 +32,31 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 @router.get("/get_messages/{chat_id}")
 async def get_messages(chat_id: str):
     try:
-        return find_chat(chat_id)
-    except Exception:
+
+        chat_info = find_chat(chat_id)
+        user = chat_info['user']
+        user_1 = user[0]
+        user_2 = user[1]
+        messages = chat_info['message']
+
+        for message in messages:
+            if(message['sender_id'] == user_1):
+                message['receiver_id'] = user_2
+            else:
+                message['receiver_id'] = user_1
+            message['post_id'] = chat_id.split('-')[0]
+            
+        return messages
+    except Exception as e:
+        traceback.print_exc()
+        print(str(e))
         return HTTPException(status_code=400, detail="Get messages failed")
+    
+
+@router.get("/insert_chat")
+async def insert_chat_test():
+    try:
+        chat = Message(sender_id = "6680111aab03c321bdab2946", receiver_id = "668011caab03c321bdab2948", message = "넹넹", time = datetime.now().isoformat(), post_id = "66801215ab03c321bdab294a")
+        return insert_chat(chat)
+    except Exception:
+        return HTTPException(status_code=400, detail="Insert chat failed")

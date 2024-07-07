@@ -62,6 +62,7 @@ async def get_post(post_id: str):
 async def get_post():
     try:
         res = find_posts()
+        print(res)
         for post in res:
             if(post['borrow'] == True):
                 writer_uuid = post['borrower_uuid']
