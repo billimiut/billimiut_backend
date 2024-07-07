@@ -44,7 +44,7 @@ async def get_messages(chat_id: str):
                 message['receiver_id'] = user_2
             else:
                 message['receiver_id'] = user_1
-            message['post_id'] = chat_id.split('-')[0]
+            message['post_id'] = chat_id.split('_')[0]
             
         return messages
     except Exception as e:

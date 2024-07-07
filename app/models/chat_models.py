@@ -14,8 +14,8 @@ def insert_chat(chat: Message):
         receiver_id = chat['receiver_id']
 
         # 변경 시 적용할 코드
-        users = ':'.join(sorted([sender_id, receiver_id]))
-        chat_id = '-'.join([post_id, users])
+        users = '_'.join(sorted([sender_id, receiver_id]))
+        chat_id = '_'.join([post_id, users])
 
         # 기존코드
         # chat_id = ':'.join(sorted([sender_id, receiver_id]))
