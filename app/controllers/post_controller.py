@@ -13,6 +13,8 @@ router = APIRouter()
 @router.post("/post")
 async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(...)):
     try:
+        print("new post!!!!")
+        print(post)
         image_urls = []        
         for single_file in image_file:
             filename = await upload_image(single_file)
