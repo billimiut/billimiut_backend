@@ -17,7 +17,8 @@ class ConnectionManager:
     async def disconnect(self, client_id: str):
         websocket = self.active_connections.get(client_id)
         if websocket is not None:
-            await websocket.close()
+            if not websocket.client_state.closed:
+                await websocket.close()
             del self.active_connections[client_id]
     
     async def send_personal_message(self, message: str, time: str, sender_id: str, receiver_id: str, post_id: str):
