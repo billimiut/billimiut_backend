@@ -11,7 +11,7 @@ def default_chat_info(chat_list: list, user_id: str):
     for chat_id in chat_list:
         chat_info = find_chat(chat_id)
         user = chat_info['user']
-        post_id = chat_id.split('-')[0]
+        post_id = chat_id.split('_')[0]
         
         if user[0] == user_id:
             neighbor_id = user[1]
