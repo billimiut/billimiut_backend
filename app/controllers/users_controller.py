@@ -116,7 +116,7 @@ async def kakaocallback(request: Request):
 
                 res = default_user_info(res)
 
-                return {"access_token": access_token, "refresh_token": refresh_token, "my_info": res}
+                return RedirectResponse(url=f"/users/token/{access_token}")
             except Exception as e:
                 traceback.print_exc()
                 print(str(e))
@@ -150,3 +150,16 @@ async def put_my_info(user: UserUpdate):
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Put my info failed")
+    
+@router.get("/users/token/{token}")
+async def get_token(token: str):
+    message, payload = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
+    id = payload['data']['_id']
+
+    message, refresh_token = jwt_encoder("refresh_token", payload['data'])
+
+    res, message = find_user_by_id(UserGetInfo(id=id))
+
+    res = default_user_info(res)
+
+    return {"refresh_token": refresh_token, "my_info": res}
