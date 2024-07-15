@@ -133,14 +133,17 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 @router.put("/post/{post_id}")
 async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: List[UploadFile] = File(...)):
     try:
+        print("edit post start with the post_id", post_id)
+        print(post)
+        #이 부분에 기존 이미지들을 s3 버켓에서 삭제하는 기능이 있으면 될거 같음. 추후 진행
         image_urls = []
         for single_file in image_file:
             filename = await upload_image(single_file)
             image_urls.append(filename)
         post_dict = json.loads(post)
-        post_dict['image_url'] = image_urls        
+        post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
-        res = update_post(post_id, post)
+        res = await update_post(post_id, post)
         if(post_dict['borrow'] == True):
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:

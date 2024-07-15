@@ -102,11 +102,15 @@ def find_posts_by_user_and_status(user_id: str, status: str):
 
 def update_post(post_id: str, post: PostBase):
     try:
+        print("in post_model - update_post :")
         post = post.model_dump()
+        print(post)
         response = client[collection].find_one({"_id": ObjectId(post_id)})
+        print(response)
         if response:
             response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": post})
             print(response)
+            # update_user_post를 여기에 넣어야 함
             return {"message":response.modified_count} # 수정된 갯수.
         else:
             return {"error": "Post not found"}
