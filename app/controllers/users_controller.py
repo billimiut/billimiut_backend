@@ -116,7 +116,7 @@ async def kakaocallback(request: Request):
 
                 res = default_user_info(res)
 
-                return RedirectResponse(url=f"billimiut://users/token/{access_token}")
+                return RedirectResponse(url=f"/users/token/{access_token}")
             except Exception as e:
                 traceback.print_exc()
                 print(str(e))
