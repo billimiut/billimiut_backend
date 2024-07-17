@@ -142,7 +142,7 @@ async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: Li
             image_urls.append(filename)
         post_dict = json.loads(post)
         post_dict['image_url'] = image_urls
-        post = PostBase(**post_dict)
+        post = PostBase(**post_dict) # 여기서 validation 에러가 생기는 듯 함. 수정 필요 key value 비교해보자.
         res = await update_post(post_id, post)
         if(post_dict['borrow'] == True):
             post_dict["writer_id"] = post_dict['borrower_uuid']
