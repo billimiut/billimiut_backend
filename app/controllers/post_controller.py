@@ -141,7 +141,7 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         image_urls = []
         if 'delete_image_url' in post_dict and post_dict['delete_image_url']:
             delete_image_url = post_dict['delete_image_url']
-            res = await edit_post_image_url(post_id, delete_image_url)
+            res = edit_post_image_url(post_id, delete_image_url)
             if 'error' in res:
                 raise HTTPException(status_code=400, detail=res['error'])
             for url in res:
@@ -162,7 +162,7 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
             raise HTTPException(status_code=422, detail="Validation error in post data")
 
         print(post_model)
-        res = await update_post(post_id, post_model)
+        res = update_post(post_id, post_model)
         if post_dict.get('borrow') == True:
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
