@@ -1,9 +1,10 @@
 import traceback
 from typing import Optional,List
 from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
+from pydantic import ValidationError
 from app.models.users_models import find_user_by_id, update_user_post
 from app.schemas.post_schema import PostBase, PostUpdate, PostMake
-from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post
+from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post, edit_post_image_url
 import os,json
 from app.schemas.users_schema import UserGetInfo
 from app.middlewares.images import upload_image
@@ -131,26 +132,49 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 #         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
-async def put_post_by_post_id(post_id:str, post: str = Form(...), image_file: List[UploadFile] = File(...)):
+async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: List[UploadFile] = File(...)):
     try:
         print("edit post start with the post_id", post_id)
-        print(post)
-        #이 부분에 기존 이미지들을 s3 버켓에서 삭제하는 기능이 있으면 될거 같음. 추후 진행
+        post_dict = json.loads(post)
+        print(post_dict)
+
         image_urls = []
-        for single_file in image_file:
+        if 'delete_image_url' in post_dict and post_dict['delete_image_url']:
+            delete_image_url = post_dict['delete_image_url']
+            res = await edit_post_image_url(post_id, delete_image_url)
+            if 'error' in res:
+                raise HTTPException(status_code=400, detail=res['error'])
+            for url in res:
+                image_urls.append(url)
+            del post_dict['delete_image_url']
+
+        for single_file in add_image:
             filename = await upload_image(single_file)
             image_urls.append(filename)
-        post_dict = json.loads(post)
+
         post_dict['image_url'] = image_urls
-        post = PostBase(**post_dict) # 여기서 validation 에러가 생기는 듯 함. 수정 필요 key value 비교해보자.
-        res = await update_post(post_id, post)
-        if(post_dict['borrow'] == True):
+        print(post_dict)
+        
+        try:
+            post_model = PostBase(**post_dict)
+        except ValidationError as e:
+            print("Validation error:", e)
+            raise HTTPException(status_code=422, detail="Validation error in post data")
+
+        print(post_model)
+        res = await update_post(post_id, post_model)
+        if post_dict.get('borrow') == True:
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_id"] = post_dict['lender_uuid']
+
         return res, post_dict
-    except Exception:
+    except HTTPException as e:
+        return e
+    except Exception as e:
+        print(e)
         return HTTPException(status_code=400, detail="Update post failed")
+
     
 # @router.post("/post/upload_image")
 # async def upload_image_test(file: UploadFile = File(...)):

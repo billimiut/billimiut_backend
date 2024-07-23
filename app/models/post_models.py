@@ -100,20 +100,35 @@ def find_posts_by_user_and_status(user_id: str, status: str):
         print(e)
         return {"error": "Find failed"}
 
-def update_post(post_id: str, post: PostBase):
-    try:
-        print("in post_model - update_post :")
-        post = post.model_dump()
-        print(post)
-        response = client[collection].find_one({"_id": ObjectId(post_id)})
-        print(response)
-        if response:
-            response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": post})
+    def update_post(post_id: str, post: PostBase):
+        try:
+            print("in post_model - update_post :")
+            post = post.model_dump()
+            print(post)
+            response = client[collection].find_one({"_id": ObjectId(post_id)})
             print(response)
-            # update_user_post를 여기에 넣어야 함
-            return {"message":response.modified_count} # 수정된 갯수.
+            if response:
+                response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": post})
+                print(response)
+                # update_user_post를 여기에 넣어야 함
+                return {"message":response.modified_count} # 수정된 갯수.
+            else:
+                return {"error": "Post not found"}
+        except Exception as e:
+            print(e)
+            return {"error": "Update failed"}
+    
+def edit_post_image_url(post_id: str, delete_image_url: list):
+    try:
+        response = client[collection].find_one({"_id": ObjectId(post_id)})
+        if response:
+            for url in delete_image_url:
+                response['image_url'].remove(url)
+            return_value = response['image_url']
+            response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": {"image_url": response['image_url']}})
+            return return_value # 수정된 갯수.
         else:
-            return {"error": "Post not found"}
+            return {"error": "Post not found during update image url"}
     except Exception as e:
         print(e)
         return {"error": "Update failed"}
