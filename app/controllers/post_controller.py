@@ -170,6 +170,7 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_id"] = post_dict['lender_uuid']
+        post_dict["post_id"] = post_id
         return post_dict
     except HTTPException as e:
         return e
