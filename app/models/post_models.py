@@ -124,11 +124,14 @@ def edit_post_image_url(post_id: str, delete_image_url: list):
     try:
         response = client[collection].find_one({"_id": ObjectId(post_id)})
         if response:
-            for url in delete_image_url:
-                response['image_url'].remove(url)
-            return_value = response['image_url']
-            response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": {"image_url": response['image_url']}})
-            return return_value # 수정된 갯수.
+            if delete_image_url == []:
+                return response['image_url']
+            else:
+                for url in delete_image_url:
+                    response['image_url'].remove(url)
+                return_value = response['image_url']
+                response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": {"image_url": response['image_url']}})
+                return return_value # 수정된 갯수.
         else:
             return {"error": "Post not found during update image url"}
     except Exception as e:
