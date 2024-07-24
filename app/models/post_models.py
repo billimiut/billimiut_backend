@@ -111,7 +111,7 @@ def update_post(post_id: str, post: PostBase):
             response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": post})
             print(response)
             if response.modified_count > 0:
-                return post
+                return {"message": response.modified_count}
             else:
                 return {"error": "Update failed"}
         else:

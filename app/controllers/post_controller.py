@@ -163,13 +163,13 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
             raise HTTPException(status_code=422, detail="Validation error in post data")
 
         print(post_model)
-        res = update_post(post_id, post_model)
+        res = update_post(post_id, post_model) # res에 post_dict값과 똑같은 값이 담김
         if post_dict.get('borrow') == True:
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_id"] = post_dict['lender_uuid']
 
-        return res, post_dict
+        return post_dict
     except HTTPException as e:
         return e
     except Exception as e:
