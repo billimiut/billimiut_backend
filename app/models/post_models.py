@@ -110,8 +110,10 @@ def update_post(post_id: str, post: PostBase):
         if response:
             response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": post})
             print(response)
-            # update_user_post를 여기에 넣어야 함
-            return {"message":response.modified_count} # 수정된 갯수.
+            if response.modified_count > 0:
+                return post
+            else:
+                return {"error": "Update failed"}
         else:
             return {"error": "Post not found"}
     except Exception as e:
