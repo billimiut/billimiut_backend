@@ -132,7 +132,7 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 #         return HTTPException(status_code=400, detail="Get posts by user and status failed")
 
 @router.put("/post/{post_id}")
-async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: List[UploadFile] = File(...)):
+async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: List[UploadFile] = File(None)):
     try:
         print("edit post start with the post_id", post_id)
         post_dict = json.loads(post)
@@ -148,9 +148,10 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
                 image_urls.append(url)
             del post_dict['delete_image_url']
 
-        for single_file in add_image:
-            filename = await upload_image(single_file)
-            image_urls.append(filename)
+        if add_image:
+            for single_file in add_image:
+                filename = await upload_image(single_file)
+                image_urls.append(filename)
 
         post_dict['image_url'] = image_urls
         print(post_dict)
