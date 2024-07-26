@@ -3,10 +3,13 @@ from app.utils.post_util import default_post_info
 
 
 def delete_sensitive_data(user_info: dict):
-    del user_info['pw']
-    del user_info['salt']
+    if 'pw' in user_info:
+        del user_info['pw']
+    if 'salt' in user_info:
+        del user_info['salt']
     del user_info['type']
-    del user_info['token']
+    if 'token' in user_info:
+        del user_info['token']
 
 
 def default_user_info(user_info: dict):
