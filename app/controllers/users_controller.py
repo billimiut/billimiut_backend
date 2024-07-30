@@ -4,7 +4,7 @@ from fastapi import HTTPException, APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin, UserGetInfo, UserUpdate
-from app.models.users_models import find_user_by_email, insert_user, find_user, find_user_by_id, update_user
+from app.models.users_models import find_user_by_email, insert_user, find_user, find_user_by_id, update_user, delete_user
 from app.utils.jwt_util import jwt_decoder, jwt_encoder
 from app.utils.user_util import default_user_info
 
@@ -101,7 +101,7 @@ async def kakaocallback(request: Request):
             female = True
         else:
             female = False
-        user = UserCreate(id=email, nickname=nickname, female=female, type='kakao')
+        user = UserCreate(id=email, nickname=nickname, female=female, type='kakao', token=access_token)
         # 이미 유저 존재하는지 확인하는 과정 필요
         try:
             res, message = find_user_by_email(UserGetInfo(id=email))
@@ -115,7 +115,7 @@ async def kakaocallback(request: Request):
                 res, message = find_user_by_id(UserGetInfo(id=res['_id']))
 
                 res = default_user_info(res)
-
+                print("access_token: ", access_token)
                 return RedirectResponse(url=f"billimiut://account/{access_token}")
             except Exception as e:
                 traceback.print_exc()
@@ -163,3 +163,32 @@ async def get_token(token: str):
     res = default_user_info(res)
 
     return {"refresh_token": refresh_token, "my_info": res}
+
+@router.delete("/users/delete")
+async def withdrawal(req: Request):
+    auth_header = req.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+    message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
+    id = information['data']['_id']
+    user, message = find_user_by_id(UserGetInfo(id=id))
+    print(user)
+    if user['type'] == 'kakao':
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url=f"https://kapi.kakao.com/v1/user/unlink",
+                headers={"Authorization": f"Bearer {user['token']}"})
+            rbody = response.json()
+            if 'id' in rbody:
+                try:
+                    res = delete_user(id)
+                    return res
+                except Exception:
+                    return HTTPException(status_code=400, detail="Delete user failed")
+            else:
+                return HTTPException(status_code=400, detail="Delete user failed")
+    else:
+        try:
+            res = delete_user(id)
+            return res
+        except Exception:
+            return HTTPException(status_code=400, detail="Delete user failed")
