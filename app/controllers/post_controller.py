@@ -12,11 +12,11 @@ from app.models.users_models import find_user_by_id
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(...)):
+async def create_post(post: str = Form(...), image_file: Optional[List[UploadFile]] = File(None)):
     try:
-        print("new post!!!!")
-        print(post)
-        image_urls = []        
+        image_urls = []
+        if image_file is None:
+            image_file = []
         for single_file in image_file:
             filename = await upload_image(single_file)
             image_urls.append(filename)
