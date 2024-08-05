@@ -17,10 +17,12 @@ async def create_post(post: str = Form(...), image_file: List[UploadFile] = File
     try:
         print("new post!!!!")
         print(post)
-        image_urls = []        
-        for single_file in image_file:
-            filename = await upload_image(single_file)
-            image_urls.append(filename)
+        image_urls = []
+        if image_file:        
+            for single_file in image_file:
+                filename = await upload_image(single_file)
+                image_urls.append(filename)
+        print(image_urls)
         post_dict = json.loads(post)
         post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
