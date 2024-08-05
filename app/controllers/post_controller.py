@@ -143,12 +143,12 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         print(post_dict)
 
         image_urls = []
-        delete_image_url = []
-        if 'delete_image_url' in post_dict and post_dict['delete_image_url']:
-            delete_image_url = post_dict['delete_image_url']
-            del post_dict['delete_image_url']
+        remove_image_url = []
+        if 'remove_image_url' in post_dict and post_dict['remove_image_url']:
+            remove_image_url = post_dict['remove_image_url']
+            del post_dict['remove_image_url']
 
-        res = edit_post_image_url(post_id, delete_image_url)
+        res = edit_post_image_url(post_id, remove_image_url)
         if 'error' in res:
             raise HTTPException(status_code=400, detail=res['error'])
 
