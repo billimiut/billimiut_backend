@@ -151,13 +151,13 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         res = edit_post_image_url(post_id, delete_image_url)
         if 'error' in res:
             raise HTTPException(status_code=400, detail=res['error'])
-        for url in res:
-            image_urls.append(url)
 
         if add_image:
             for single_file in add_image:
                 filename = await upload_image(single_file)
                 image_urls.append(filename)
+
+        image_urls += res
 
         post_dict['image_url'] = image_urls
         print(post_dict)
