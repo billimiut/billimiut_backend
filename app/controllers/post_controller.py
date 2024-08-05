@@ -12,7 +12,8 @@ from app.models.users_models import find_user_by_id
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(...)):
+# 기존에 postMake를 사용하여 schema를 받아오려 하였으나, 해당 과정에서 entity 에러가 계속 떠서 Form으로 수정했음. 이 과정도 수정이 필요할 듯 함.
+async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(Optional)):
     try:
         print("new post!!!!")
         print(post)
