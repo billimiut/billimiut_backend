@@ -114,3 +114,16 @@ def update_user_post(writer_uuid: str, post_uuid: str):
     except Exception as e:
         print(e)
         return {"error": "Update failed"}
+    
+
+def delete_user(user_uuid: str):
+    try:
+        response = client[collection].find_one({'_id': ObjectId(user_uuid)})
+        if response:
+            response = client[collection].delete_one({'_id': ObjectId(user_uuid)})
+            return {"message": response.deleted_count}
+        else:
+            return {"error": "User not found"}
+    except Exception as e:
+        print(e)
+        return {"error": "Delete failed"}
