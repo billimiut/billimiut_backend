@@ -1,6 +1,4 @@
 from pymongo.mongo_client import MongoClient
-from bson.binary import UuidRepresentation
-from uuid import uuid4
 import certifi
 
 from dotenv import load_dotenv,find_dotenv

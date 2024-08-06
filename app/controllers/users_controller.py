@@ -1,6 +1,6 @@
 import os, traceback, httpx
 from urllib.parse import urlencode
-from fastapi import HTTPException, APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from app.schemas.users_schema import UserCreate, UserCreateService, UserLogin, UserGetInfo, UserUpdate
@@ -9,6 +9,7 @@ from app.utils.jwt_util import jwt_decoder, jwt_encoder
 from app.utils.user_util import default_user_info
 
 router = APIRouter()
+
 
 def temp_dummy_data(res: dict):
     res["borrow_count"] = 0
@@ -48,7 +49,7 @@ async def login(user: UserLogin):
 
 
 @router.get("/users/login/kakao")
-def kakaologin():
+def kakao_login():
     client_id = os.environ.get('KAKAO_REST_API_KEY')
     redirect_uri = os.environ.get('KAKAO_REDIRECT_URI')
 
@@ -62,16 +63,16 @@ def kakaologin():
 
 
 @router.get('/users/login/kakao/callback')
-async def kakaocallback(request: Request):
+async def kakao_callback(request: Request):
     query = request.query_params
     code = query.get('code')
-    clietn_id = os.environ.get('KAKAO_REST_API_KEY')
+    client_id = os.environ.get('KAKAO_REST_API_KEY')
     redirect_uri = os.environ.get('KAKAO_REDIRECT_URI')
     client_secret = os.environ.get('KAKAO_CLIENT_SECRET')
 
     config = {
         "grant_type": "authorization_code",
-        "client_id": clietn_id,
+        "client_id": client_id,
         "redirect_uri": redirect_uri,
         "code": code,
         "client_secret": client_secret
@@ -105,7 +106,7 @@ async def kakaocallback(request: Request):
         # 이미 유저 존재하는지 확인하는 과정 필요
         try:
             res, message = find_user_by_email(UserGetInfo(id=email))
-            if res == None:
+            if res is None:
                 res = insert_user(user)
             try:
                 # 예외처리 부분이 이상해서 일단 제거함
@@ -150,7 +151,8 @@ async def put_my_info(user: UserUpdate):
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Put my info failed")
-    
+
+
 @router.get("/users/token/{token}")
 async def get_token(token: str):
     message, payload = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
@@ -163,6 +165,7 @@ async def get_token(token: str):
     res = default_user_info(res)
 
     return {"refresh_token": refresh_token, "my_info": res}
+
 
 @router.delete("/users/delete")
 async def withdrawal(req: Request):
