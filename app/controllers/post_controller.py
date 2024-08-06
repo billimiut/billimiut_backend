@@ -12,14 +12,18 @@ from app.models.users_models import find_user_by_id
 router = APIRouter()
 
 @router.post("/post")
-async def create_post(post: str = Form(...), image_file: Optional[List[UploadFile]] = File(None)):
+# 기존에 postMake를 사용하여 schema를 받아오려 하였으나, 해당 과정에서 entity 에러가 계속 떠서 Form으로 수정했음. 이 과정도 수정이 필요할 듯 함.
+async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(None)):
     try:
+        print("new post!!!!")
+        print(post)
         image_urls = []
-        if image_file is None:
-            image_file = []
-        for single_file in image_file:
-            filename = await upload_image(single_file)
-            image_urls.append(filename)
+        print(image_urls)
+        if image_file:        
+            for single_file in image_file:
+                filename = await upload_image(single_file)
+                image_urls.append(filename)
+        print(image_urls)
         post_dict = json.loads(post)
         post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
@@ -139,21 +143,21 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         print(post_dict)
 
         image_urls = []
-        delete_image_url = []
-        if 'delete_image_url' in post_dict and post_dict['delete_image_url']:
-            delete_image_url = post_dict['delete_image_url']
-            del post_dict['delete_image_url']
+        remove_image_url = []
+        if 'remove_image_url' in post_dict and post_dict['remove_image_url']:
+            remove_image_url = post_dict['remove_image_url']
+            del post_dict['remove_image_url']
 
-        res = edit_post_image_url(post_id, delete_image_url)
+        res = edit_post_image_url(post_id, remove_image_url)
         if 'error' in res:
             raise HTTPException(status_code=400, detail=res['error'])
-        for url in res:
-            image_urls.append(url)
 
         if add_image:
             for single_file in add_image:
                 filename = await upload_image(single_file)
                 image_urls.append(filename)
+
+        image_urls += res
 
         post_dict['image_url'] = image_urls
         print(post_dict)

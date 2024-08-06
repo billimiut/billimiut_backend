@@ -48,8 +48,7 @@ def update_post_status(post: PostUpdate):
         post = post.model_dump()
         response = client[collection].find_one({"_id": ObjectId(post["post_id"])})
         if response:
-            
-            response = client[collection].update_one({"_id": ObjectId(post["post_id"])}, {"$set": {"status": not response["status"]}})
+            response = client[collection].update_one({"_id": ObjectId(post["post_id"])}, {"$set": {"status": post["status"]}})
             return {"message":response.modified_count} # 수정된 갯수.
         else:
             return {"error": "Post not found"}
@@ -120,14 +119,14 @@ def update_post(post_id: str, post: PostBase):
         print(e)
         return {"error": "Update failed"}
     
-def edit_post_image_url(post_id: str, delete_image_url: list):
+def edit_post_image_url(post_id: str, remove_image_url: list):
     try:
         response = client[collection].find_one({"_id": ObjectId(post_id)})
         if response:
-            if delete_image_url == []:
+            if remove_image_url == []:
                 return response['image_url']
             else:
-                for url in delete_image_url:
+                for url in remove_image_url:
                     response['image_url'].remove(url)
                 return_value = response['image_url']
                 response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": {"image_url": response['image_url']}})
