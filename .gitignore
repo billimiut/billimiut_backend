@@ -2,6 +2,7 @@
 .venv
 venv
 .env
+env
 __pycache__
 .python-version
 .idea
