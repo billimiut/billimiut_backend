@@ -12,7 +12,7 @@ def default_post_info(post_list: list):
         result.append(item_info)
 
     for post in result:
-        if(post['borrow'] == True):
+        if post['borrow']:
             writer_id = post['borrower_uuid']
         else:
             writer_id = post['lender_uuid']

@@ -1,5 +1,8 @@
 import json
+
+from typing import Dict
 from fastapi import WebSocket
+
 
 class ConnectionManager:
     def __init__(self):
@@ -25,5 +28,6 @@ class ConnectionManager:
                 "post_id": post_id
             }
             await websocket.send_text(json.dumps(data))
+
 
 manager = ConnectionManager()
