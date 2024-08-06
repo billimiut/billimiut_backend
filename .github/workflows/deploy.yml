@@ -28,7 +28,8 @@ jobs:
             docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
             docker stop billimiut-container || true
             docker rm billimiut-container || true
-            docker run -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
+            docker run -v ./logs:/workspace/logs \
+            -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
             -e MONGO_USER=${{ secrets.MONGO_USER }} \
             -e MONGO_PASS=${{ secrets.MONGO_PASS }} \
             -e MONGO_HOST=${{ secrets.MONGO_HOST }} \
