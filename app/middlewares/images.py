@@ -1,14 +1,14 @@
-import secrets
 from PIL import Image, ImageOps
 from fastapi import UploadFile, HTTPException, status,File
 import io 
 from app.middlewares.amazon import upload_to_s3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 from dotenv import load_dotenv,find_dotenv
 import os
 
 load_dotenv(find_dotenv())
+
 
 async def upload_image(file: UploadFile = File(...)):
     try:
@@ -26,6 +26,7 @@ async def upload_image(file: UploadFile = File(...)):
     except HTTPException as e:
         return False
 
+
 async def validate_image_type(file: UploadFile) -> UploadFile:
     if file.filename.split(".")[-1].lower() not in ["jpg", "jpeg", "png"]:
         raise HTTPException(
@@ -40,6 +41,7 @@ async def validate_image_type(file: UploadFile) -> UploadFile:
         )
     return file
 
+
 async def validate_image_size(file: UploadFile) -> UploadFile:
     if len(await file.read()) > 10 * 1024 * 1024:
         raise HTTPException(
@@ -47,6 +49,7 @@ async def validate_image_size(file: UploadFile) -> UploadFile:
             detail="이미지 파일은 10MB 이하만 업로드 가능합니다.",
         )
     return file
+
 
 def change_filename(file: UploadFile) -> UploadFile:
     """
@@ -74,16 +77,19 @@ def resize_image(file: UploadFile, max_size: int = 1024):
     read_image = read_image.convert("RGB")
     read_image = ImageOps.exif_transpose(read_image)
     return read_image
- 
+
+
 def save_image_to_filesystem(image: Image, file_path: str):
     image.save(file_path, "jpeg", quality=70)
     return file_path
- 
+
+
 def convert_image_to_bytes(image: Image) -> io.BytesIO:
     img_byte = io.BytesIO()
     image.save(img_byte, "jpeg", quality=70)
     img_byte.seek(0)
     return img_byte
+
 
 """
 https://chaechae.life/blog/fastapi-image-upload

@@ -1,7 +1,8 @@
-from boto3 import client
-from dotenv import load_dotenv,find_dotenv
 import os
 import io
+
+from boto3 import client
+from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
  
@@ -11,7 +12,8 @@ s3_client = client(
     aws_secret_access_key= os.getenv('AWS_SECRET_KEY'),
     region_name="ap-northeast-2",
 )
- 
+
+
 def upload_to_s3(file: io.BytesIO, bucket_name: str, file_name: str) -> None:
     s3_client.upload_fileobj(
         file,

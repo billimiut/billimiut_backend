@@ -1,55 +1,52 @@
+import json
 import traceback
-from typing import Optional,List
-from fastapi import HTTPException, APIRouter, HTTPException, Body, UploadFile, File,Form,Depends
+from typing import Optional, List
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import ValidationError
-from app.models.users_models import find_user_by_id, update_user_post
-from app.schemas.post_schema import PostBase, PostUpdate, PostMake
-from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, find_posts_by_user_and_status, update_post, edit_post_image_url
-import os,json
-from app.schemas.users_schema import UserGetInfo
+
 from app.middlewares.images import upload_image
+from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url
 from app.models.users_models import find_user_by_id
+from app.models.users_models import update_user_post
+from app.schemas.post_schema import PostBase, PostUpdate
+from app.schemas.users_schema import UserGetInfo
 from geopy.distance import geodesic
 router = APIRouter()
+
 
 @router.post("/post")
 # 기존에 postMake를 사용하여 schema를 받아오려 하였으나, 해당 과정에서 entity 에러가 계속 떠서 Form으로 수정했음. 이 과정도 수정이 필요할 듯 함.
 async def create_post(post: str = Form(...), image_file: List[UploadFile] = File(None)):
     try:
-        print("new post!!!!")
-        print(post)
         image_urls = []
-        print(image_urls)
         if image_file:        
             for single_file in image_file:
                 filename = await upload_image(single_file)
                 image_urls.append(filename)
-        print(image_urls)
         post_dict = json.loads(post)
         post_dict['image_url'] = image_urls
         post = PostBase(**post_dict)
         res = insert_post(post)
-        print(str(res))
         post_dict["post_id"] = str(res)
-        if(post_dict['borrow'] == True):
+        if post_dict['borrow']:
             post_dict["writer_uuid"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_uuid"] = post_dict['lender_uuid']
-        print(post_dict["writer_uuid"])
         writer_uuid = post_dict["writer_uuid"]
         update_user_post(writer_uuid, post_dict["post_id"])
         writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
-        print(writer_info["nickname"])
         post_dict["nickname"] = writer_info["nickname"]        
         return post_dict
-    except Exception:        
+    except Exception:
         return HTTPException(status_code=400, detail="Create post failed")
-    
+
+
 @router.get("/post/{post_id}")
 async def get_post(post_id: str):
     try:
         res = find_post(post_id)
-        if(res['borrow'] == True):
+        if res['borrow']:
             writer_uuid = res['borrower_uuid']
         else:
             writer_uuid = res['lender_uuid']
@@ -63,6 +60,7 @@ async def get_post(post_id: str):
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get post failed")
+
 
 @router.get("/post")
 async def get_post(latitude: float, longitude: float):
@@ -100,7 +98,8 @@ async def get_post(latitude: float, longitude: float):
         print(e)
         return HTTPException(status_code=400, detail="Get posts failed")
 
-@router.put("/post/status") ## 이거 굳이 borrower uuid랑 lender uuid를 받아올 필요가 없는거 같음. post_id만 받아오면 될듯
+
+@router.put("/post/status") # 이거 굳이 borrower uuid랑 lender uuid를 받아올 필요가 없는거 같음. post_id만 받아오면 될듯
 async def put_post_status(post: PostUpdate):
     try:
         res = update_post_status(post)
@@ -139,15 +138,7 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get posts by user failed")
-    
-# @router.get("/post/personal/{user_id}?status={status}")
-# async def get_posts_by_user_and_status(user_id: str, status: str):
-#     print(status)
-#     try:
-#         res = find_posts_by_user_and_status(user_id, status)
-#         return res
-#     except Exception:
-#         return HTTPException(status_code=400, detail="Get posts by user and status failed")
+
 
 @router.put("/post/{post_id}")
 async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: List[UploadFile] = File(None)):
@@ -184,7 +175,7 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
 
         print(post_model)
         res = update_post(post_id, post_model) # res에 post_dict값과 똑같은 값이 담김
-        if post_dict.get('borrow') == True:
+        if post_dict.get('borrow'):
             post_dict["writer_id"] = post_dict['borrower_uuid']
         else:
             post_dict["writer_id"] = post_dict['lender_uuid']
@@ -195,29 +186,3 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
     except Exception as e:
         print(e)
         return HTTPException(status_code=400, detail="Update post failed")
-
-    
-# @router.post("/post/upload_image")
-# async def upload_image_test(file: UploadFile = File(...)):
-#     try:
-#         filename = await upload_image(file)
-#         # post_dict = json.loads(post)
-#         # print(post_dict)
-#         return {"filename": filename}
-#         # else:
-#         #     return HTTPException(status_code=400, detail="Upload image failed")
-#         # 이미지를 서버(리눅스)에 저장하는 코드.
-#         # post_dict = json.loads(post)
-#         # post = PostBase(**post_dict)
-#         # post_id = post.borrower_uuid if post.borrower_uuid else post.lender_uuid
-#         # res = find_post(post_id)
-#         # if res:
-#         #     current_dir = os.path.dirname(os.path.realpath(__file__)) 
-#         #     UPLOAD_DIR = os.path.join(current_dir, "../images")
-#         #     content = await file.read()
-#         #     filename = f"{post_id}.png"
-#         #     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
-#         #         f.write(content)
-#         #     return {"filename": filename, "post_id": post_id, "status": "success"}
-#     except Exception:
-#         return HTTPException(status_code=400, detail="Upload image failed")

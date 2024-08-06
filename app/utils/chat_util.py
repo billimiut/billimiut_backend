@@ -4,6 +4,7 @@ from app.schemas.users_schema import UserGetInfo
 
 import datetime
 
+
 def default_chat_info(chat_list: list, user_id: str):
 
     result = []

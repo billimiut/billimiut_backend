@@ -2,6 +2,7 @@ from datetime import timedelta, datetime
 import os
 import jwt
 
+
 def jwt_decoder(token: str, key: str):
     try:
         payload = jwt.decode(token, key, algorithms=['HS256'])
@@ -10,7 +11,8 @@ def jwt_decoder(token: str, key: str):
         return {"message": "Token expired"}
     except jwt.InvalidTokenError:
         return {"message": "Invalid Token"}
-    
+
+
 def jwt_encoder(scope: str, data: dict):
     if scope == "access_token":
         time = timedelta(days=30)
