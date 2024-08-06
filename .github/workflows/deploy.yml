@@ -24,6 +24,7 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           port: 22
           script: |
+            cd /home/billimiut
             docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
             docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
             docker stop billimiut-container || true
