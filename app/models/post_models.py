@@ -29,7 +29,7 @@ def find_post(post_id: str):
     except Exception as e:
         print(e)
         return {"error": "Find failed"}
-
+ 
 def find_posts():
     try:
         response = list(client[collection].find())
@@ -136,3 +136,27 @@ def edit_post_image_url(post_id: str, remove_image_url: list):
     except Exception as e:
         print(e)
         return {"error": "Update failed"}
+    
+
+def report_post(post_id: str,reporter_uuid:str, report_reason: str):
+    try:
+        response = client[collection].find_one({"_id": ObjectId(post_id)})
+        if response:
+            if response['report'] is None:
+                response['report'] = [reporter_uuid]
+            else:
+                if reporter_uuid in response['report']:
+                    return {"message": "already reported"}
+                response['report'].append(reporter_uuid)
+            # response['report_reason'] = report_reason
+            if len(response['report']) > 5:
+                response = client[collection].delete_one({"_id": ObjectId(post_id)})
+                return {"message": "post deleted"}
+            else:
+                response = client[collection].update_one({"_id": ObjectId(post_id)}, {"$set": {"report": response['report']}})#, "report_reason": report_reason}})
+                return {"message": "report added"}
+        else:
+            return {"error": "Post not found during report"}
+    except Exception as e:
+        print(e)
+        return {"error": "Report failed"}
