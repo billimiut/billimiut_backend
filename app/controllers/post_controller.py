@@ -9,7 +9,7 @@ from app.middlewares.images import upload_image
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url, report_post
 from app.models.users_models import find_user_by_id
 from app.models.users_models import update_user_post
-from app.schemas.post_schema import PostBase, PostUpdate
+from app.schemas.post_schema import PostBase, PostUpdate, PostReport
 from app.schemas.users_schema import UserGetInfo
 from geopy.distance import geodesic
 router = APIRouter()
@@ -188,9 +188,10 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         return HTTPException(status_code=400, detail="Update post failed")
 
 @router.post("/post/report/{post_id}")
-async def post_report_post(post_id: str, reporter_uuid: str, report_reason: str):
+async def post_report_post(post_id: str, report: PostReport):
     try:
-        res = report_post(post_id, reporter_uuid, report_reason)
+
+        res = report_post(post_id, report.reporter_uuid, report.report_reason)
         return res["message"] # 현재는 어떤 결과가 나왔다라고만 이렇게 리턴을 하는데, 이거는 추후 변경하는게 좋을 것 같음.
     except Exception as e:
         print(e)

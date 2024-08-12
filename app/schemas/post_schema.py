@@ -49,3 +49,7 @@ class PostMake(BaseModel):
     price: int = Form(...)
     post_time: datetime = Form(...)
     status: str = Form(...)
+
+class PostReport(BaseModel):
+    reporter_uuid: str
+    report_reason: str
