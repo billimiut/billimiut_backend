@@ -8,11 +8,14 @@ from ..utils.log_util import logger
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+
         logger.info(f"{datetime.datetime.now()} Request {request.method} {request.url}")
+        # 요청이 들어온 경우 request를 로깅한다. 시각, method, request uri를 로깅한다.
 
         response = await call_next(request)
+        # 서비스 내에서 request가 처리되고 나면 response가 온다.
 
-        # 응답 정보 및 처리 시간 로깅
         logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
+        # 요청이 들어온 경우 response를 로깅한다. 시각, 어떤 요청에 대한 응답인지, 상태코드를 로깅한다.
 
         return response
