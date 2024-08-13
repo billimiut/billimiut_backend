@@ -42,5 +42,9 @@ jobs:
             -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
             -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
             -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
+            --log-driver=awslogs \
+            --log-opt awslogs-region=ap-northeast-2 \
+            --log-opt awslogs-group=billimiutLogs \
+            --log-opt awslogs-stream=billimiutLogStream \
             --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
             uvicorn main:app --host=0.0.0.0 --reload
