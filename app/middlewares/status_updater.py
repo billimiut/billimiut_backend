@@ -1,5 +1,5 @@
 from fastapi import Request
-import time
+from datetime import datetime
 from ..db.session import client
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -7,7 +7,7 @@ collection = 'post'
 
 class statusMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        current_time = time.time()
+        current_time = datetime.utcnow()
         collection = client['post']
         collection.update_many(
             {"end_date": {"$lt": current_time}, "status": {"$ne": "종료"}},
