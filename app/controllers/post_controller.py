@@ -177,9 +177,10 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
 @router.post("/post/report/{post_id}")
 async def post_report_post(post_id: str, report: PostReport):
     try:
-
-        res = report_post(post_id, report.reporter_uuid, report.report_reason)
-        return res["message"] # 현재는 어떤 결과가 나왔다라고만 이렇게 리턴을 하는데, 이거는 추후 변경하는게 좋을 것 같음.
+        report = report.model_dump()
+        print(report["reporter_uuid"],report["report_reason"])
+        res = report_post(post_id, report["reporter_uuid"], report["report_reason"])
+        return res
     except Exception as e:
         print(e)
         return HTTPException(status_code=400, detail="Report post failed")
