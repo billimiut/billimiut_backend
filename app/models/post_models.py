@@ -159,3 +159,21 @@ def report_post(post_id: str, reporter_uuid: str, report_reason: str):
     except Exception as e:
         print("Exception occurred: ", e)
         return {"error": "Report failed"}
+
+# 지리공간 인덱스로 근처 게시글 불러오기
+def find_nearby_posts(latitude, longitude, max_distance_meters=1000):
+    query = {
+        "map_coordinate": {
+            "$near": {
+                "$geometry": {
+                    "type": "Point",
+                    "coordinates": [longitude, latitude]
+                },
+                "$maxDistance": max_distance_meters  # 1km 이내
+            }
+        }
+    }
+    posts = list(collection.find(query))
+    for post in posts:
+        post['_id'] = str(post['_id'])  # ObjectId를 문자열로 변환
+    return posts
