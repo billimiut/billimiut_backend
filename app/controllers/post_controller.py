@@ -195,12 +195,12 @@ async def post_report_post(post_id: str, report: PostReport):
         return HTTPException(status_code=400, detail="Report post failed")
 
 # 임시 - 지리공간 인덱싱으로 바꿀것
-@router.get("/post/filter/{filter}")
-async def filter_post(filter: str, res: List[PostBase]):
+@router.post("/post/filter/{filter}")
+async def filter_post(filter: str, posts: List[PostBase]):
     try:
         filtered_posts = []
         
-        for post in res:
+        for post in posts:
             if post['borrow']:
                 writer_uuid = post['borrower_uuid']
             else:
@@ -218,7 +218,7 @@ async def filter_post(filter: str, res: List[PostBase]):
                 filtered_posts.append(post)
         
         if filter == "distance": # 거리순 필터링
-            filtered_posts = sorted(res, key=lambda x: x.get('distance', float('inf')))
+            filtered_posts = sorted(posts, key=lambda x: x.get('distance', float('inf')))
         
         print(filtered_posts)
         return filtered_posts
