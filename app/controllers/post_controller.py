@@ -195,28 +195,24 @@ async def post_report_post(post_id: str, report: PostReport):
         return HTTPException(status_code=400, detail="Report post failed")
 
 # 임시 - 지리공간 인덱싱으로 바꿀것
-@router.post("/post/filter/{filter}")
-async def filter_post(filter: str, posts: str = Query(...)):
+async def filter_post(filter: str, posts: List[PostBase] = Body(...)):
     try:
-        posts = json.loads(posts)
         filtered_posts = []
         
         for post in posts:
-            if post['borrow']:
-                writer_uuid = post['borrower_uuid']
+            if post.borrow:
+                writer_uuid = post.borrower_uuid
             else:
-                writer_uuid = post['lender_uuid'] 
+                writer_uuid = post.lender_uuid 
             
             writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
-            post['nickname'] = writer_info['nickname']
-            post['profile_image'] = writer_info['profile_image']
-            post['writer_uuid'] = writer_uuid
-            post_id = post['_id']
-            del post['_id']
-            post['post_id'] = post_id
-
-            if filter == "ing" and post['status'] == '게시': # 게시중 필터링
-                filtered_posts.append(post)
+            post_data = post.dict()
+            post_data['nickname'] = writer_info['nickname']
+            post_data['profile_image'] = writer_info['profile_image']
+            post_data['writer_uuid'] = writer_uuid
+            
+            if filter == "ing" and post.status == '게시': # 게시중 필터링
+                filtered_posts.append(post_data)
         
         if filter == "distance": # 거리순 필터링
             filtered_posts = sorted(posts, key=lambda x: x.get('distance', float('inf')))
