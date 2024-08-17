@@ -196,35 +196,31 @@ async def post_report_post(post_id: str, report: PostReport):
 
 # 임시 - 지리공간 인덱싱으로 바꿀것
 @router.get("/post/filter/{filter}")
-async def filter_post(filter: str, latitude: float, longitude: float):
+async def filter_post(filter: str, res: List[PostBase]):
     try:
-        res = find_posts()
-        nearby_posts = []  # 반경 1km 이내의 게시물을 저장
+        filtered_posts = []
+        
         for post in res:
-            user_coords = (latitude, longitude)
-            post_coords = (post['map_coordinate']['latitude'], post['map_coordinate']['longitude'])
-            distance = geodesic(user_coords, post_coords).km # 사용자 위치와 포스트 위치 간의 거리를 계산
-            post['distance'] = round(distance * 1000)
-            # 거리가 1km 이내인 경우에만 리스트에 추가
-            if distance <= 1:
-                nearby_posts.append(post)
-                if(post['borrow'] == True):
-                    writer_uuid = post['borrower_uuid']
-                else:
-                    writer_uuid = post['lender_uuid'] 
-                writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
-                post['nickname'] = writer_info['nickname']
-                post['profile_image'] = writer_info['profile_image']
-                post['writer_uuid'] = writer_uuid
-                post_id = post['_id']
-                del post['_id']
-                post['post_id'] = post_id
-
-        if filter == "ing": # 게시중 필터링
-            filtered_posts = [post for post in nearby_posts if post['status'] == '게시']
-        elif filter == "distance": # 거리순 필터링
-            filtered_posts = sorted(nearby_posts, key=lambda x: x.get('distance', float('inf')))
+            if post['borrow']:
+                writer_uuid = post['borrower_uuid']
+            else:
+                writer_uuid = post['lender_uuid'] 
             
+            writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
+            post['nickname'] = writer_info['nickname']
+            post['profile_image'] = writer_info['profile_image']
+            post['writer_uuid'] = writer_uuid
+            post_id = post['_id']
+            del post['_id']
+            post['post_id'] = post_id
+
+            if filter == "ing" and post['status'] == '게시': # 게시중 필터링
+                filtered_posts.append(post)
+        
+        if filter == "distance": # 거리순 필터링
+            filtered_posts = sorted(res, key=lambda x: x.get('distance', float('inf')))
+        
+        print(filtered_posts)
         return filtered_posts
     except Exception as e:
         traceback.print_exc()
