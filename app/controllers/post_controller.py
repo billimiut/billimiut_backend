@@ -73,10 +73,10 @@ async def get_post(latitude: float, longitude: float):
             user_coords = (latitude, longitude)
             post_coords = (post['map_coordinate']['latitude'], post['map_coordinate']['longitude'])
             distance = geodesic(user_coords, post_coords).km # 사용자 위치와 포스트 위치 간의 거리를 계산
+            post['distance'] = distance
             # 거리가 1km 이내인 경우에만 리스트에 추가
             if distance <= 1:
                 nearby_posts.append(post)
-
                 if(post['borrow'] == True):
                     writer_uuid = post['borrower_uuid']
                 else:
@@ -88,10 +88,6 @@ async def get_post(latitude: float, longitude: float):
                 post_id = post['_id']
                 del post['_id']
                 post['post_id'] = post_id
-        print(nearby_posts)
-        print(len(nearby_posts))
-        for post in nearby_posts:
-            print(post['map_coordinate'])
         return [res, nearby_posts]
     except Exception as e:
         traceback.print_exc()
