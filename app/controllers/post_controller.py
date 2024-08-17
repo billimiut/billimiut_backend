@@ -196,8 +196,9 @@ async def post_report_post(post_id: str, report: PostReport):
 
 # 임시 - 지리공간 인덱싱으로 바꿀것
 @router.post("/post/filter/{filter}")
-async def filter_post(filter: str, posts: List[PostBase]):
+async def filter_post(filter: str, posts: str = Query(...)):
     try:
+        posts = json.loads(posts)
         filtered_posts = []
         
         for post in posts:
