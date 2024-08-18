@@ -211,10 +211,6 @@ async def filter_post(filter: str, posts: List[PostFilter] = Body(...)):
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_uuid'] = writer_uuid
-            post_id = post['id']
-            print(post_id)
-            del post['id']
-            post['post_id'] = post_id
 
             if post['status'] == '게시': # 게시중인 게시물을 기반으로 모든 필터링 수행
                 filtered_posts.append(post)
@@ -222,7 +218,8 @@ async def filter_post(filter: str, posts: List[PostFilter] = Body(...)):
         
         if filter == "distance": # 거리순 필터링
             filtered_posts = sorted(filtered_posts, key=lambda x: x.get('distance', float('inf')))
-            filtered_posts += done_posts
+            done_posts = sorted(done_posts, key=lambda x: x.get('distance', float('inf')))
+            filtered_posts.extend(done_posts)
         
         print(filtered_posts)
         return filtered_posts

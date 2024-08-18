@@ -25,7 +25,7 @@ class PostBase(BaseModel):
     status: Optional[str]
 
 class PostFilter(BaseModel):
-    id: Optional[str] = Field(None, alias="_id")
+    post_id: Optional[str]
     address: Optional[str]
     detail_address: Optional[str]
     dong: Optional[str]
@@ -46,8 +46,6 @@ class PostFilter(BaseModel):
     post_time: Optional[datetime]
     status: Optional[str]
     distance: Optional[int]
-    class Config:
-        populate_by_name = True
 
 class PostUpdate(BaseModel):
     post_id: str
