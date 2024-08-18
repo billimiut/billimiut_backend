@@ -2,14 +2,14 @@ import json
 import traceback
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
 from pydantic import ValidationError
 
 from app.middlewares.images import upload_image
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url, report_post
 from app.models.users_models import find_user_by_id
 from app.models.users_models import update_user_post
-from app.schemas.post_schema import PostBase, PostUpdate, PostReport
+from app.schemas.post_schema import PostBase, PostUpdate, PostReport, PostFilter
 from app.schemas.users_schema import UserGetInfo
 from geopy.distance import geodesic
 router = APIRouter()
@@ -196,29 +196,29 @@ async def post_report_post(post_id: str, report: PostReport):
 
 # 임시 - 지리공간 인덱싱으로 바꿀것
 @router.post("/post/filter/{filter}")
-async def filter_post(filter: str, posts: List[PostBase] = Body(...)):
+async def filter_post(filter: str, posts: List[PostFilter] = Body(...)):
     try:
         filtered_posts = []
         
         for post in posts:
+            post = post.dict()
             if post['borrow']:
                 writer_uuid = post['borrower_uuid']
             else:
                 writer_uuid = post['lender_uuid'] 
-            
             writer_info, message = find_user_by_id(UserGetInfo(id=writer_uuid))
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
             post['writer_uuid'] = writer_uuid
-            post_id = post['_id']
-            del post['_id']
+            post_id = post['id']
+            del post['id']
             post['post_id'] = post_id
 
-            if filter == "ing" and post['status'] == '게시': # 게시중 필터링
+            if post['status'] == '게시': # 게시중인 게시물을 기반으로 모든 필터링 수행
                 filtered_posts.append(post)
         
         if filter == "distance": # 거리순 필터링
-            filtered_posts = sorted(posts, key=lambda x: x.get('distance', float('inf')))
+            filtered_posts = sorted(filtered_posts, key=lambda x: x.get('distance', float('inf')))
         
         print(filtered_posts)
         return filtered_posts

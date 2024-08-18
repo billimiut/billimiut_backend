@@ -24,6 +24,30 @@ class PostBase(BaseModel):
     post_time: Optional[datetime]
     status: Optional[str]
 
+class PostFilter(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    address: Optional[str]
+    detail_address: Optional[str]
+    dong: Optional[str]
+    borrow: Optional[bool]
+    borrower_uuid: Optional[str]
+    category: Optional[str]
+    title: Optional[str]
+    description: Optional[str]
+    emergency: Optional[bool]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime] 
+    female: Optional[bool]
+    image_url: Optional[List[str]]
+    item: Optional[str]
+    lender_uuid: Optional[str]
+    map_coordinate: Optional[Dict[str, float]]
+    price: Optional[int]
+    post_time: Optional[datetime]
+    status: Optional[str]
+    class Config:
+        populate_by_name = True
+
 class PostUpdate(BaseModel):
     post_id: str
     borrower_uuid: str
