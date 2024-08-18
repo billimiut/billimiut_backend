@@ -45,7 +45,7 @@ class PostFilter(BaseModel):
     price: Optional[int]
     post_time: Optional[datetime]
     status: Optional[str]
-    distance: Optional[float]
+    distance: Optional[int]
     class Config:
         populate_by_name = True
 
