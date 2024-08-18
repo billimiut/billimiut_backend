@@ -218,7 +218,7 @@ async def filter_post(filter: str, posts: List[PostFilter] = Body(...)):
 
             if post['status'] == '게시': # 게시중인 게시물을 기반으로 모든 필터링 수행
                 filtered_posts.append(post)
-            else: done_posts.appemd(post)
+            else: done_posts.append(post)
         
         if filter == "distance": # 거리순 필터링
             filtered_posts = sorted(filtered_posts, key=lambda x: x.get('distance', float('inf')))
