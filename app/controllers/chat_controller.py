@@ -16,7 +16,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             data = await websocket.receive_text()
             data_json = json.loads(data)
-            message = Message(**data_json, time=datetime.now().isoformat())
+            message = Message(**data_json, time=datetime.utcnow().isoformat())
             print(f"Message content: {message.model_dump()}")
             if insert_chat(message):
                 await manager.send_personal_message(message.message, message.time, message.sender_id, message.receiver_id, message.post_id)
