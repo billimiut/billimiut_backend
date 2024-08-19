@@ -1,8 +1,7 @@
 import traceback
 import json
-import pytz
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.schemas.chat_schema import manager, Message
 from app.models.chat_models import insert_chat,find_chat
@@ -18,8 +17,8 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             data = await websocket.receive_text()
             data_json = json.loads(data)
-            kst = pytz.timezone('Asia/Seoul')
-            time_in_format = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            now = datetime.now() + timedelta(hours=9)
+            time_in_format = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             message = Message(**data_json, time=time_in_format)
             print(f"Message content: {message.model_dump()}")
             if insert_chat(message):
