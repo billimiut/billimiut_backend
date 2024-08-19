@@ -17,7 +17,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         while True:
             data = await websocket.receive_text()
             data_json = json.loads(data)
-            now = datetime.now() + timedelta(hours=9)
+            now = datetime.now() + timedelta(hours=9) # 현재 utc시간으로 -9시간 되서 일단 임시로 +9 했음 나중에 수정
             time_in_format = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             message = Message(**data_json, time=time_in_format)
             print(f"Message content: {message.model_dump()}")
