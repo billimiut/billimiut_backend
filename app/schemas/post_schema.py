@@ -23,6 +23,7 @@ class PostBase(BaseModel):
     price: Optional[int]
     post_time: Optional[datetime]
     status: Optional[str]
+    map: Optional[bool]
 
 class PostFilter(BaseModel):
     post_id: Optional[str]
@@ -45,6 +46,7 @@ class PostFilter(BaseModel):
     price: Optional[int]
     post_time: Optional[datetime]
     status: Optional[str]
+    map: Optional[bool]
     distance: Optional[int]
 
 class PostUpdate(BaseModel):
