@@ -24,12 +24,14 @@ def insert_user(user: UserCreate):
 def find_user(user: UserLogin):
     try:
         user = user.model_dump()
+        response = client[collection].find()
         response = client[collection].find_one(user)
         if response:
             print(type(response["_id"]))
             response["_id"] = str(response["_id"])
             return response, {"message": "Success"}
         else:
+            print("User not found")
             return None, {"error": "User not found"}
     except Exception as e:
         print(e)

@@ -177,3 +177,19 @@ def find_nearby_posts(latitude, longitude, max_distance_meters=1000):
     for post in posts:
         post['_id'] = str(post['_id'])  # ObjectId를 문자열로 변환
     return posts
+
+def get_borrow_or_lend_list(user_id: str, borrow: bool):
+    if borrow:
+        query = {"borrower_uuid": user_id}
+    else:
+        query = {"lender_uuid": user_id}
+    posts = list(client[collection].find(query))
+    post_ids = [str(post['_id']) for post in posts]
+    return post_ids
+
+def get_posts_by_user_id(user_id: str):
+    posts = list(client[collection].find({"$and": [{"borrower_uuid": user_id}, {"borrow": True}]}))
+    posts.extend(list(client[collection].find({"$and":[{"lender_uuid": user_id},{"borrow": False}]})))
+
+    post_ids = [str(post['_id']) for post in posts]
+    return post_ids

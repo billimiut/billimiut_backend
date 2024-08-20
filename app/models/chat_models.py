@@ -62,3 +62,9 @@ def find_chat(chat_id: str):
     except Exception as e:
         print(e)
         return {"error": "Find failed"}
+    
+def get_chat_by_user_id(user_id:str):
+    chats = list(client[collection].find({"user": user_id}))
+    chat_ids = [str(chat['_id']) for chat in chats]
+
+    return chat_ids
