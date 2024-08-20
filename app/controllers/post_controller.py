@@ -12,6 +12,8 @@ from app.models.users_models import update_user_post
 from app.schemas.post_schema import PostBase, PostUpdate, PostReport, PostFilter
 from app.schemas.users_schema import UserGetInfo
 from geopy.distance import geodesic
+
+from app.models.chat_models import find_chat_by_post_id, delete_chat, update_related_post_status
 router = APIRouter()
 
 
@@ -106,6 +108,10 @@ async def put_post_status(post: PostUpdate):
 @router.delete("/post/{post_id}")
 async def delete_post(post_id: str):
     try:
+        # 게시글 삭제 시 연관 채팅 찾아서 전부 삭제하도록 구현
+        related_chat = find_chat_by_post_id(post_id)
+        for chat in related_chat:
+            update_related_post_status(chat._id)
         res = erase_post(post_id)
         return res
     except Exception:

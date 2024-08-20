@@ -34,7 +34,7 @@ def insert_chat(chat: Message):
             )
         else:
             client[collection].insert_one(
-                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id]}
+                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id], "post_status": "published"}
             )
             client['user'].update_one(
                 {"_id": ObjectId(sender_id)},
@@ -68,3 +68,21 @@ def get_chat_by_user_id(user_id:str):
     chat_ids = [str(chat['_id']) for chat in chats]
 
     return chat_ids
+
+def find_chat_by_post_id(post_id: str):
+    chats = client[collection].find()
+    related_chat = list()
+    for chat in chats:
+        chat_id = chat._id
+        chat_info = chat_id.split('_')
+        post_info = chat_info[0]
+        if post_info == post_id:
+            related_chat.append(chat_id)
+    return related_chat
+
+def delete_chat(chat_id: str):
+    client[collection].delete_one({"_id": chat_id})
+    return True
+
+def update_related_post_status(chat_id: str):
+    client[collection].update_one({"_id": chat_id},{"$set": {"post_status": "deleted"}})
