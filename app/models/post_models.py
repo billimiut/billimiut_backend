@@ -48,7 +48,7 @@ def update_post_status(post: PostUpdate):
         post = post.model_dump()
         response = client[collection].find_one({"_id": ObjectId(post["post_id"])})
         if response:
-            response = client[collection].update_one({"_id": ObjectId(post["post_id"])}, {"$set": {"status": post["status"]}})
+            response = client[collection].update_one({"_id": ObjectId(post["post_id"])}, {"$set": {"status": post["status"],"borrower_uuid": post["borrower_uuid"],"lender_uuid": post["lender_uuid"]}})
             return {"message":response.modified_count} # 수정된 갯수.
         else:
             return {"error": "Post not found"}
