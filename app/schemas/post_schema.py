@@ -51,8 +51,6 @@ class PostFilter(BaseModel):
 
 class PostUpdate(BaseModel):
     post_id: str
-    borrower_uuid: str
-    lender_uuid: str
     status: str
 
 class PostMake(BaseModel):
