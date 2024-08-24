@@ -110,9 +110,12 @@ async def delete_post(post_id: str):
     try:
         # 게시글 삭제 시 연관 채팅 찾아서 전부 삭제하도록 구현
         related_chat = find_chat_by_post_id(post_id)
+        print(related_chat)
         for chat in related_chat:
+            print(chat._id)
             update_related_post_status(chat._id)
         res = erase_post(post_id)
+        print(res)
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Delete post failed")
