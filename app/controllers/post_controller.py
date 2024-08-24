@@ -108,11 +108,10 @@ async def put_post_status(post: PostUpdate):
 @router.delete("/post/{post_id}")
 async def delete_post(post_id: str):
     try:
-        ######### 해당 부분에서 오류 발생해서 일단 주석 처리 함 #########
-        # # 게시글 삭제 시 연관 채팅 찾아서 전부 삭제하도록 구현
-        # related_chat = find_chat_by_post_id(post_id)
-        # for chat in related_chat:
-        #     update_related_post_status(chat._id)
+        # 게시글 삭제 시 연관 채팅 찾아서 전부 삭제하도록 구현
+        related_chat = find_chat_by_post_id(post_id)
+        for chat in related_chat:
+            update_related_post_status(chat._id)
         res = erase_post(post_id)
         return res
     except Exception:

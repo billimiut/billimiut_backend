@@ -70,10 +70,10 @@ def get_chat_by_user_id(user_id:str):
     return chat_ids
 
 def find_chat_by_post_id(post_id: str):
-    chats = client[collection].find()
+    chats = list(client[collection].find())
     related_chat = list()
     for chat in chats:
-        chat_id = chat._id
+        chat_id = chat["_id"]
         chat_info = chat_id.split('_')
         post_info = chat_info[0]
         if post_info == post_id:
