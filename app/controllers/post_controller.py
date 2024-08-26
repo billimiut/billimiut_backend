@@ -68,7 +68,6 @@ async def get_post(post_id: str):
 async def get_post(latitude: float, longitude: float):
     try:
         res = find_posts()
-        print(res)
 
         nearby_posts = []  # 반경 1km 이내의 게시물을 저장
         for post in res:
@@ -128,7 +127,6 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
             post['_id'] = str(post['_id'])
             post['nickname'] = writer_info['nickname']
             post['profile_image'] = writer_info['profile_image']
-            print(user_id)
             post['writer_uuid'] = user_id
             post_id = post['_id']
             del post['_id']
@@ -147,9 +145,7 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 @router.put("/post/{post_id}")
 async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: List[UploadFile] = File(None)):
     try:
-        print("edit post start with the post_id", post_id)
         post_dict = json.loads(post)
-        print(post_dict)
 
         image_urls = []
         remove_image_url = []
@@ -169,7 +165,6 @@ async def put_post_by_post_id(post_id: str, post: str = Form(...), add_image: Li
         image_urls += res
 
         post_dict['image_url'] = image_urls
-        print(post_dict)
         
         try:
             post_model = PostBase(**post_dict)
@@ -228,8 +223,7 @@ async def filter_post(filter: str, posts: List[PostFilter] = Body(...)):
             filtered_posts = sorted(filtered_posts, key=lambda x: x.get('distance', float('inf')))
             done_posts = sorted(done_posts, key=lambda x: x.get('distance', float('inf')))
             filtered_posts.extend(done_posts)
-        
-        print(filtered_posts)
+
         return filtered_posts
     except Exception as e:
         traceback.print_exc()

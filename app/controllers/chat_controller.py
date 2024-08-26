@@ -20,7 +20,6 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             now = datetime.now() + timedelta(hours=9) # 현재 utc시간으로 -9시간 되서 일단 임시로 +9 했음 나중에 수정
             time_in_format = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             message = Message(**data_json, time=time_in_format)
-            print(f"Message content: {message.model_dump()}")
             if insert_chat(message):
                 await manager.send_personal_message(message.message, message.time, message.sender_id, message.receiver_id, message.post_id)
     except WebSocketDisconnect:

@@ -116,7 +116,7 @@ async def kakao_callback(request: Request):
                 res, message = find_user_by_id(UserGetInfo(id=res['_id']))
 
                 res = default_user_info(res)
-                print("access_token: ", access_token)
+
                 return RedirectResponse(url=f"billimiut://account/{access_token}")
             except Exception as e:
                 traceback.print_exc()
@@ -174,7 +174,6 @@ async def withdrawal(req: Request):
     message, information = jwt_decoder(token, os.environ.get('JWT_SECRET_KEY_ACCESS'))
     id = information['data']['_id']
     user, message = find_user_by_id(UserGetInfo(id=id))
-    print(user)
     if user['type'] == 'kakao':
         async with httpx.AsyncClient() as client:
             response = await client.post(
