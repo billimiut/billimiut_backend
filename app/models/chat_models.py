@@ -34,7 +34,7 @@ def insert_chat(chat: Message):
             )
         else:
             client[collection].insert_one(
-                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id], "post_status": "published"}
+                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id], "is_published": True}
             )
             client['user'].update_one(
                 {"_id": ObjectId(sender_id)},
@@ -84,5 +84,5 @@ def delete_chat(chat_id: str):
     client[collection].delete_one({"_id": chat_id})
     return True
 
-def update_related_post_status(chat_id: str):
-    client[collection].update_one({"_id": chat_id},{"$set": {"post_status": "deleted"}})
+def update_chat_status(chat_id: str):
+    client[collection].update_one({"_id": chat_id},{"$set": {"is_published": False}})
