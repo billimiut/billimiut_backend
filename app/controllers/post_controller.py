@@ -108,7 +108,8 @@ async def put_post_status(post: PostUpdate):
 @router.delete("/post/{post_id}")
 async def delete_post(post_id: str):
     try:
-        # 게시글 삭제 시 연관 채팅 찾아서 전부 삭제하도록 구현
+        # 게시글 삭제 시 연관 채팅 찾아서 상태 업데이트 하도록 구현
+        # is_published False로 변경
         related_chat = find_chat_by_post_id(post_id)
         for chat in related_chat:
             update_chat_status(chat)

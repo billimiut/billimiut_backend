@@ -4,7 +4,6 @@ from app.schemas.users_schema import UserGetInfo
 
 
 def default_post_info(post_list: list):
-
     result = []
 
     for post_id in post_list:
@@ -22,5 +21,14 @@ def default_post_info(post_list: list):
         post['writer_id'] = writer_id
         post['post_id'] = post['_id']
         del post['_id']
-        
+
     return result
+
+
+def get_post_writer_uuid(post_id: str):
+    post = find_post(post_id)
+    if post['borrow']:
+        writer_id = post['borrower_uuid']
+    else:
+        writer_id = post['lender_uuid']
+    return writer_id

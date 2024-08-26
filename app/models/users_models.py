@@ -3,6 +3,7 @@ from bson.objectid import ObjectId
 
 from ..db.session import client
 from ..schemas.users_schema import UserBase, UserCreate, UserCreateService, UserLogin,UserGetInfo, UserUpdate
+from app.models.post_models import find_post
 
 collection = 'user' # user로 수정해야하나?
 collection_temp = 'user_temp'
@@ -129,3 +130,11 @@ def delete_user(user_uuid: str):
     except Exception as e:
         print(e)
         return {"error": "Delete failed"}
+
+
+def update_user_post_list(post_id):
+    post = find_post(post_id)
+    lender = post['lender_uuid']
+    borrower = post['borrower_uuid']
+    client[collection].updateOne({"_id": ObjectId(lender)},{"$pull": {"lend_list": post_id}})
+    client[collection].updateOne({"_id": ObjectId(borrower)}, {"$pull": {"borrow_list": post_id}})
