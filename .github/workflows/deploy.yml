@@ -25,7 +25,7 @@ jobs:
       - name: Deploy to server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} \
-          "cd /home/billimiut/deploy && git pull origin dev && docker-compose-dev.yml up -d"
+          "cd /home/ubuntu/billimiut_backend && git pull origin dev && docker-compose-dev.yml up -d"
       - name: Checkout...
         uses: actions/checkout@v3
 
