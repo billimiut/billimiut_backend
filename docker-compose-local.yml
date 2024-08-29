@@ -1,0 +1,16 @@
+version: '3.8'  # Docker Compose 버전
+services:
+  billimiut:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: billimiut-img:latest  # 사용자 정의 이미지 이름
+    container_name: billimiut-container
+    ports:
+      - "8000:8000"  # 호스트의 포트 5000을 컨테이너의 포트 5000에 매핑
+    volumes:
+      - ./app:/workspace/app  # 애플리케이션 코드 디렉토리를 컨테이너에 매핑
+    env_file:
+      - ./.env
+    command: uvicorn main:app --host=0.0.0.0 --reload
+    restart: always

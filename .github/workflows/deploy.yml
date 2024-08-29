@@ -6,8 +6,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout...
-        uses: actions/checkout@v3
       - name: Docker Login
         run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
       - name: Build Docker
@@ -16,35 +14,48 @@ jobs:
       - name: Push Docker
         run: |
           docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
-      - name: SSH Login
-        uses: appleboy/ssh-action@master
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.4
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SERVER_KEY }}
-          port: 22
-          script: |
-            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
-            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
-            docker stop billimiut-container || true
-            docker rm billimiut-container || true
-            docker rmi $(docker images -q) || true
-            docker run -v /home/billimiut/logs:/workspace/logs \
-            -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
-            -e MONGO_USER=${{ secrets.MONGO_USER }} \
-            -e MONGO_PASS=${{ secrets.MONGO_PASS }} \
-            -e MONGO_HOST=${{ secrets.MONGO_HOST }} \
-            -e JWT_SECRET_KEY_ACCESS=${{ secrets.JWT_SECRET_KEY_ACCESS }} \
-            -e JWT_SECRET_KEY_REFRESH=${{ secrets.JWT_SECRET_KEY_REFRESH }} \
-            -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
-            -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
-            -e BUCKET_URL=${{ secrets.BUCKET_URL }} \
-            -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
-            -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
-            -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
-            --log-driver=awslogs \
-            --log-opt awslogs-region=ap-northeast-2 \
-            --log-opt awslogs-group=billimiutLogs \
-            --log-opt awslogs-stream=billimiutLogStream \
-            --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
-            uvicorn main:app --host=0.0.0.0 --reload
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} \
+          "cd /home/billimiut/deploy && git pull origin dev && docker-compose-dev.yml up -d"
+      - name: Checkout...
+        uses: actions/checkout@v3
+
+#      - name: SSH Login
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.SERVER_HOST }}
+#          username: ${{ secrets.SERVER_USERNAME }}
+#          key: ${{ secrets.SERVER_KEY }}
+#          port: 22
+#          script: |
+#            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
+#            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
+#            docker stop billimiut-container || true
+#            docker rm billimiut-container || true
+#            docker rmi $(docker images -q) || true
+#            docker run -v /home/billimiut/logs:/workspace/logs \
+#            -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
+#            -e MONGO_USER=${{ secrets.MONGO_USER }} \
+#            -e MONGO_PASS=${{ secrets.MONGO_PASS }} \
+#            -e MONGO_HOST=${{ secrets.MONGO_HOST }} \
+#            -e JWT_SECRET_KEY_ACCESS=${{ secrets.JWT_SECRET_KEY_ACCESS }} \
+#            -e JWT_SECRET_KEY_REFRESH=${{ secrets.JWT_SECRET_KEY_REFRESH }} \
+#            -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
+#            -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
+#            -e BUCKET_URL=${{ secrets.BUCKET_URL }} \
+#            -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
+#            -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
+#            -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
+#            --log-driver=awslogs \
+#            --log-opt awslogs-region=ap-northeast-2 \
+#            --log-opt awslogs-group=billimiutLogs \
+#            --log-opt awslogs-stream=billimiutLogStream \
+#            --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
+#            uvicorn main:app --host=0.0.0.0 --reload

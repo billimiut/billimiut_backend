@@ -1,0 +1,26 @@
+version: '3.8'  # Docker Compose 버전
+services:
+  billimiut:
+    image: yaongmeow/billimiut:latest # Dockerfile의 이름
+    container_name: billimiut-container
+    ports:
+      - "5000:8000"  # 호스트의 포트 5000을 컨테이너의 포트 5000에 매핑
+    volumes:
+      - ./app:/workspace/app  # 애플리케이션 코드 디렉토리를 컨테이너에 매핑
+    environment:
+      MONGO_USER: ${MONGO_USER}
+      MONGO_HOST: ${MONGO_HOST}
+      MONGO_PASS: ${MONGO_PASS}
+      MONGO_PORT: ${MONGO_PORT}
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
+      KAKAO_REDIRECT_URI: ${KAKAO_REDIRECT_URI}
+      JWT_SECRET_KEY_ACCESS: ${JWT_SECRET_KEY_ACCESS}
+      JWT_SECRET_KEY_REFRESH: ${JWT_SECRET_KEY_REFRESH}
+    command: uvicorn main:app --host=0.0.0.0 --reload
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-group: billimiutLogs
+        awslogs-stream: billimiutLogStream
+    restart: always
