@@ -8,14 +8,14 @@ jobs:
     steps:
       - name: Checkout...
         uses: actions/checkout@v3
-      - name: Docker Login
-        run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build Docker
-        run: |
-          docker build -f Dockerfile -t ${{ secrets.DOCKER_ID }}/billimiut-docker .
-      - name: Push Docker
-        run: |
-          docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
+#      - name: Docker Login
+#        run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
+#      - name: Build Docker
+#        run: |
+#          docker build -f Dockerfile -t ${{ secrets.DOCKER_ID }}/billimiut-docker .
+#      - name: Push Docker
+#        run: |
+#          docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Set up SSH
