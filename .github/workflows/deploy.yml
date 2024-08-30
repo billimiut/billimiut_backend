@@ -25,8 +25,9 @@ jobs:
           port: 22
           script: |
             echo "login succeed"
-            cd /home/ubuntu/billimiut_backend
+#            cd /home/ubuntu/billimiut_backend
             pwd
+            cd billimiut_backend
             git pull origin dev
             sudo docker-compose -f docker-compose-dev.yml up -d
 #            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
