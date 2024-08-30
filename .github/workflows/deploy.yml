@@ -26,28 +26,15 @@ jobs:
           script: |
             cd /home/ubuntu/billimiut_backend
             git pull origin dev
+            export MONGO_PORT=${{ secrets.MONGO_PORT }}
+            export MONGO_USER=${{ secrets.MONGO_USER }}
+            export MONGO_PASS=${{ secrets.MONGO_PASS }}
+            export MONGO_HOST=${{ secrets.MONGO_HOST }}
+            export JWT_SECRET_KEY_ACCESS=${{ secrets.JWT_SECRET_KEY_ACCESS }} 
+            export JWT_SECRET_KEY_REFRESH=${{ secrets.JWT_SECRET_KEY_REFRESH }} 
+            export AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} 
+            export AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} 
+            export BUCKET_URL=${{ secrets.BUCKET_URL }} 
+            export KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} 
+            export KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} 
             sudo docker-compose -f docker-compose-dev.yml up -d
-#            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
-#            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
-#            docker stop billimiut-container || true
-#            docker rm billimiut-container || true
-#            docker rmi $(docker images -q) || true
-#            docker run -v /home/billimiut/logs:/workspace/logs \
-#            -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
-#            -e MONGO_USER=${{ secrets.MONGO_USER }} \
-#            -e MONGO_PASS=${{ secrets.MONGO_PASS }} \
-#            -e MONGO_HOST=${{ secrets.MONGO_HOST }} \
-#            -e JWT_SECRET_KEY_ACCESS=${{ secrets.JWT_SECRET_KEY_ACCESS }} \
-#            -e JWT_SECRET_KEY_REFRESH=${{ secrets.JWT_SECRET_KEY_REFRESH }} \
-#            -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
-#            -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
-#            -e BUCKET_URL=${{ secrets.BUCKET_URL }} \
-#            -e KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }} \
-#            -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
-#            -d -p ${{secrets.EXTERNAL_PORT}}:${{secrets.INTERNAL_PORT}} \
-#            --log-driver=awslogs \
-#            --log-opt awslogs-region=ap-northeast-2 \
-#            --log-opt awslogs-group=billimiutLogs \
-#            --log-opt awslogs-stream=billimiutLogStream \
-#            --name billimiut-container ${{ secrets.DOCKER_ID }}/billimiut-docker \
-#            uvicorn main:app --host=0.0.0.0 --reload
