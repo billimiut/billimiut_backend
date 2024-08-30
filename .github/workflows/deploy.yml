@@ -25,6 +25,7 @@ jobs:
           port: 22
           script: |
             echo "login succeed"
+            ls
             pwd
             cd billimiut_backend
             git pull origin dev
