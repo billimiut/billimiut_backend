@@ -8,40 +8,25 @@ jobs:
     steps:
       - name: Checkout...
         uses: actions/checkout@v3
-#      - name: Docker Login
-#        run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
-#      - name: Build Docker
-#        run: |
-#          docker build -f Dockerfile -t ${{ secrets.DOCKER_ID }}/billimiut-docker .
-#      - name: Push Docker
-#        run: |
-#          docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
-      - name: Checkout code
-        uses: actions/checkout@v3
-#      - name: Set up SSH
-#        uses: webfactory/ssh-agent@v0.5.4
-#        with:
-#          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Set up SSH
+      - name: Docker Login
+        run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-      - name: Deploy to server
+          docker build -f Dockerfile -t ${{ secrets.DOCKER_ID }}/billimiut-docker .
+      - name: Push Docker
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} \
-          "cd /home/ubuntu/billimiut_backend && git pull origin dev && docker-compose-dev.yml up -d"
-      - name: Checkout...
-        uses: actions/checkout@v3
-
-#      - name: SSH Login
-#        uses: appleboy/ssh-action@master
-#        with:
-#          host: ${{ secrets.SERVER_HOST }}
-#          username: ${{ secrets.SERVER_USERNAME }}
-#          key: ${{ secrets.SERVER_KEY }}
-#          port: 22
-#          script: |
+          docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
+      - name: SSH Login
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: 22
+          script: |
+            cd  /home/ubuntu/billimiut_backend
+            git pull origin dev
+            docker-compose -f docker-compose-dev.yml up -d
 #            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
 #            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
 #            docker stop billimiut-container || true
