@@ -8,6 +8,14 @@ jobs:
     steps:
       - name: Checkout...
         uses: actions/checkout@v3
+      - name: Docker Login
+        run: docker login -u ${{ secrets.DOCKER_ID }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker
+        run: |
+          docker build -f Dockerfile -t ${{ secrets.DOCKER_ID }}/billimiut-docker .
+      - name: Push Docker
+        run: |
+          docker push ${{ secrets.DOCKER_ID }}/billimiut-docker:latest
       - name: SSH Login
         uses: appleboy/ssh-action@master
         with:
@@ -16,9 +24,9 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           port: 22
           script: |
-            echo "login succeed"
-            ls
-            pwd
+            cd /home/ubuntu/billimiut_backend
+            git pull origin dev
+            sudo docker-compose -f docker-compose-dev.yml up -d
 #            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
 #            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
 #            docker stop billimiut-container || true
