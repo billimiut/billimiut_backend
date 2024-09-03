@@ -67,7 +67,7 @@ def find_user_by_email(user:UserGetInfo):
     
 def find_user_by_uuid (uuid: str):
     try:
-        response = client[collection].find_one({"uuid": uuid})
+        response = client[collection].find_one({"_id": ObjectId(uuid)})
         if response:
             return response
         else:
