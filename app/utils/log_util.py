@@ -68,6 +68,7 @@ log_file_handler.setFormatter(formatter)
 # 로그 포맷 정보를 커스텀 핸들러에 추가해준다.
 
 logger.addHandler(log_file_handler)
+logger.addHandler(handler)
 # 핸들러를 로거에 추가한다.
 
 

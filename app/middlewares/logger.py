@@ -23,11 +23,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
         if not isinstance(response, StreamingResponse):
-            response_body = b""
-            async for chunk in response.body:
-                response_body += chunk
-            logger.info(f"Response Body:")
-            logger.info(response_body.decode('utf-8'))
+            response_body = response.body
+            if response_body:                
+                logger.info(f"Response Body:")
+                logger.info(response_body.decode('utf-8'))
 
         logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
         # 요청이 들어온 경우 response를 로깅한다. 시각, 어떤 요청에 대한 응답인지, 상태코드를 로깅한다.
