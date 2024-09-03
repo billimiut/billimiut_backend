@@ -3,6 +3,7 @@ import datetime
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import StreamingResponse
+from starlette.concurrency import iterate_in_threadpool
 
 from ..utils.log_util import logger
 
@@ -23,11 +24,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         if isinstance(response, StreamingResponse):
             logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
         else:
-            body = await response.body()
-            if body:
-                logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}, Body: {body.decode('utf-8')}")
-            else:
-                logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
+            response_body = [chunk async for chunk in response.body_iterator]
+            response.body_iterator = iterate_in_threadpool(iter(response_body))
+            logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}, Body: {response_body[0].decode()}")
         # 요청이 들어온 경우 response를 로깅한다. 시각, 어떤 요청에 대한 응답인지, 상태코드를 로깅한다.
 
         return response
