@@ -12,7 +12,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         logger.info(f"{datetime.datetime.now()} Request {request.method} {request.url}")
         # 요청이 들어온 경우 request를 로깅한다. 시각, method, request uri를 로깅한다.
-        
+
         body = await request.body()
         if body:
             logger.info(f"Request Body:")
@@ -21,7 +21,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         # 서비스 내에서 request가 처리되고 나면 response가 온다.
 
-        response = await call_next(request)
         if not isinstance(response, StreamingResponse):
             response_body = response.body
             if response_body:                
