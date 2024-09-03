@@ -1,13 +1,20 @@
 import os
 import io
 
-from boto3 import client
+from boto3 import client, session
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
  
 s3_client = client(
     "s3",
+    aws_access_key_id= os.getenv('AWS_ACCESS_KEY'),
+    aws_secret_access_key= os.getenv('AWS_SECRET_KEY'),
+    region_name="ap-northeast-2",
+)
+
+log_client = client(
+    "logs",
     aws_access_key_id= os.getenv('AWS_ACCESS_KEY'),
     aws_secret_access_key= os.getenv('AWS_SECRET_KEY'),
     region_name="ap-northeast-2",

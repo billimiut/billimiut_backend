@@ -4,8 +4,20 @@ import datetime
 
 from logging.handlers import BaseRotatingHandler
 
+import watchtower
+import logging
+from ..utils.amazon import log_client
+
+
+handler = watchtower.CloudWatchLogHandler(
+        boto3_client=log_client,
+        log_group_name="billimiutLogs",
+        log_stream_name="billimiutStreamLogs",        
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 
 class DateRotatingFileHandler(BaseRotatingHandler):
