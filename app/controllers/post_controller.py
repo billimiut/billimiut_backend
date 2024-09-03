@@ -2,10 +2,10 @@ import json
 import traceback
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Request
 from pydantic import ValidationError
 
-from app.middlewares.images import upload_image
+from app.utils.images import upload_image
 from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url, report_post
 from app.models.users_models import find_user_by_id
 from app.models.users_models import update_user_post
@@ -13,7 +13,8 @@ from app.schemas.post_schema import PostBase, PostUpdate, PostReport, PostFilter
 from app.schemas.users_schema import UserGetInfo
 from geopy.distance import geodesic
 
-from app.models.chat_models import find_chat_by_post_id, delete_chat, update_chat_status
+from app.models.chat_models import find_chat_by_post_id, update_chat_status
+
 router = APIRouter()
 
 
@@ -65,10 +66,9 @@ async def get_post(post_id: str):
 
 
 @router.get("/post")
-async def get_post(latitude: float, longitude: float):
+async def get_post(req: Request, latitude: float, longitude: float):
     try:
         res = find_posts()
-
         nearby_posts = []  # 반경 1km 이내의 게시물을 저장
         for post in res:
             user_coords = (latitude, longitude)

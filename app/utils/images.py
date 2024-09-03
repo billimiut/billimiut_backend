@@ -1,7 +1,7 @@
 from PIL import Image, ImageOps
 from fastapi import UploadFile, HTTPException, status,File
 import io 
-from app.middlewares.amazon import upload_to_s3
+from app.utils.amazon import upload_to_s3
 from datetime import datetime
 
 from dotenv import load_dotenv,find_dotenv
