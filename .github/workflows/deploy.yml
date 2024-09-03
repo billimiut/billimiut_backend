@@ -24,12 +24,12 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           port: 22
           script: |
-            docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
-            docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
-            docker stop billimiut-container || true
-            docker rm billimiut-container || true
-            docker rmi $(docker images -q) || true
-            docker run -v /home/billimiut/logs:/workspace/logs \
+            sudo docker login --username ${{ secrets.DOCKER_ID }} --password ${{ secrets.DOCKER_PASSWORD }}
+            sudo docker pull ${{ secrets.DOCKER_ID }}/billimiut-docker
+            sudo docker stop billimiut-container || true
+            sudo docker rm billimiut-container || true
+            sudo docker rmi $(sudo docker images -q) || true
+            sudo docker run -v /home/billimiut/logs:/workspace/logs \
             -e MONGO_PORT=${{ secrets.MONGO_PORT }} \
             -e MONGO_USER=${{ secrets.MONGO_USER }} \
             -e MONGO_PASS=${{ secrets.MONGO_PASS }} \
