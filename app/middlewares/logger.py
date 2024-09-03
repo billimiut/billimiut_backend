@@ -20,10 +20,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         # 서비스 내에서 request가 처리되고 나면 response가 온다.
 
-        body = await response.body()
         if isinstance(response, StreamingResponse):
             logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
         else:
+            body = await response.body()
             if body:
                 logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}, Body: {body.decode('utf-8')}")
             else:
