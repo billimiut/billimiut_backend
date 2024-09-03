@@ -35,15 +35,20 @@ async def get_messages(chat_id: str):
         user = chat_info['user']
         user_1 = user[0]
         user_2 = user[1]
-        messages = chat_info['message']
-        messages["receiver_username"] = find_user_by_uuid(user_2)['nickname']
-        messages["sender_username"] = find_user_by_uuid(user_1)['nickname']
+        messages = chat_info['message']        
+
+        user1_name = find_user_by_uuid(user_1)['nickname']
+        user2_name = find_user_by_uuid(user_2)['nickname']
 
         for message in messages:
             if message['sender_id'] == user_1:
                 message['receiver_id'] = user_2
+                message['sender_name'] = user1_name
+                message['receiver_name'] = user2_name              
             else:
                 message['receiver_id'] = user_1
+                message['sender_name'] = user2_name
+                message['receiver_name'] = user1_name
             message['post_id'] = chat_id.split('_')[0]
             
         return messages
