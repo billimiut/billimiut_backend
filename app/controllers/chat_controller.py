@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.schemas.chat_schema import manager, Message
 from app.models.chat_models import insert_chat,find_chat
+from app.models.users_models import find_user_by_uuid
 
 
 router = APIRouter()
@@ -35,6 +36,8 @@ async def get_messages(chat_id: str):
         user_1 = user[0]
         user_2 = user[1]
         messages = chat_info['message']
+        chat_info["receiver_username"] = find_user_by_uuid(user_2)['nickname']
+        chat_info["sender_username"] = find_user_by_uuid(user_1)['nickname']
 
         for message in messages:
             if message['sender_id'] == user_1:
