@@ -22,8 +22,11 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # 서비스 내에서 request가 처리되고 나면 response가 온다.
 
         response_body = [chunk async for chunk in response.body_iterator]
-        response.body_iterator = iterate_in_threadpool(iter(response_body))
-        logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}, Body: {response_body[0].decode()}")
+        if response_body:
+            response.body_iterator = iterate_in_threadpool(iter(response_body))
+            logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}, Body: {response_body[0].decode()}")
+        else:
+            logger.info(f"{datetime.datetime.now()} Response to {request.method} {request.url} Status {response.status_code}")
         # 요청이 들어온 경우 response를 로깅한다. 시각, 어떤 요청에 대한 응답인지, 상태코드를 로깅한다.
 
         return response
