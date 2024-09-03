@@ -36,8 +36,8 @@ async def get_messages(chat_id: str):
         user_1 = user[0]
         user_2 = user[1]
         messages = chat_info['message']
-        chat_info["receiver_username"] = find_user_by_uuid(user_2)['nickname']
-        chat_info["sender_username"] = find_user_by_uuid(user_1)['nickname']
+        messages["receiver_username"] = find_user_by_uuid(user_2)['nickname']
+        messages["sender_username"] = find_user_by_uuid(user_1)['nickname']
 
         for message in messages:
             if message['sender_id'] == user_1:
