@@ -88,7 +88,8 @@ async def get_post(req: Request, latitude: float, longitude: float):
                 post['writer_uuid'] = writer_uuid
                 post_id = post['_id']
                 del post['_id']
-                post['post_id'] = post_id
+                post['post_id'] = post_id       
+        nearby_posts = sorted(nearby_posts, key=lambda x: x['status'] == '종료')         
         return [res, nearby_posts]
     except Exception as e:
         traceback.print_exc()
