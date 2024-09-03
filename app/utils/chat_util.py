@@ -34,7 +34,7 @@ def default_chat_info(chat_list: list, user_id: str):
             "neighbor_profile": neighbor_profile,
             "last_message": last_message,
             "last_message_time": last_message_time,
-            "is_published": chat_info['is_published'],
+            "post_status": chat_info['post_status'],
         }
 
         result.append(default_data)

@@ -34,7 +34,7 @@ def insert_chat(chat: Message):
             )
         else:
             client[collection].insert_one(
-                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id], "is_published": True}
+                {"_id": chat_id, "message": [new_chat], "user": [sender_id, receiver_id], "post_status": "published"}
             )
             client['user'].update_one(
                 {"_id": ObjectId(sender_id)},
