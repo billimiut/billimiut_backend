@@ -85,4 +85,4 @@ def delete_chat(chat_id: str):
     return True
 
 def update_chat_status(chat_id: str):
-    client[collection].update_one({"_id": chat_id},{"$set": {"is_published": False}})
+    client[collection].update_one({"_id": chat_id},{"$set": {"post_status": "deleted"}})
