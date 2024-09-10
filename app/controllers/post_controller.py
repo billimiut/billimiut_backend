@@ -135,9 +135,7 @@ async def get_posts_by_user(user_id: str, status: Optional[str] = None):
 
         if status:
             # 일단 서버 자체적으로 구현
-            for post in res:
-                if post['status'] != status:
-                    res.remove(post)
+            res = [post for post in res if post['status'] == status]
         return res
     except Exception:
         return HTTPException(status_code=400, detail="Get posts by user failed")
