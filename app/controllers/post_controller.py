@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Requ
 from pydantic import ValidationError
 
 from app.utils.images import upload_image
-from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url, report_post
+from app.models.post_models import insert_post, find_post, find_posts, update_post_status, erase_post, find_posts_by_user, update_post, edit_post_image_url, report_post, find_posts_by_user_with_borrow
 from app.models.users_models import find_user_by_id
 from app.models.users_models import update_user_post
 from app.schemas.post_schema import PostBase, PostUpdate, PostReport, PostFilter
@@ -120,10 +120,13 @@ async def delete_post(post_id: str):
         return HTTPException(status_code=400, detail="Delete post failed")
 
 @router.get("/post/personal/{user_id}")
-async def get_posts_by_user(user_id: str, status: Optional[str] = None):
+async def get_posts_by_user(user_id: str, status: Optional[str] = None, borrow: Optional[bool] = None):
     try:
         writer_info, message = find_user_by_id(UserGetInfo(id=user_id))
-        res = find_posts_by_user(user_id)
+        if borrow is None :
+            res = find_posts_by_user(user_id)
+        else:
+            res = find_posts_by_user_with_borrow(user_id, borrow)
         for post in res:
             post['_id'] = str(post['_id'])
             post['nickname'] = writer_info['nickname']

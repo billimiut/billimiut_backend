@@ -193,3 +193,22 @@ def get_posts_by_user_id(user_id: str):
 
     post_ids = [str(post['_id']) for post in posts]
     return post_ids
+
+def find_posts_by_user_with_borrow(user_id: str,borrow:bool): # 'input' is not a valid ObjectId, it must be a 12-byte input or a 24-character hex string
+    try: # 위와 같은 에러가 뜨는데, 해결방법을 잘 모르겠음. 나중에 해결하기.
+        if borrow:
+            response = client[collection].find({
+                "borrower_uuid": user_id, "borrow": True
+            })
+        else:
+            response = client[collection].find({
+                "lender_uuid": user_id, "borrow": False
+            })
+        if response:
+            return list(response)
+        else:
+            return {"error": "Posts not found"}
+    except Exception as e:
+        print(e)
+        return {"error": "Find failed"}
+    
